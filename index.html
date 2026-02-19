@@ -55,11 +55,29 @@
         }
 
         .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary);
-            cursor: pointer;
             letter-spacing: -0.5px;
+            white-space: nowrap;
         }
 
         .nav-link {
@@ -178,6 +196,103 @@
         .feature-card p {
             font-size: 0.95rem;
             color: var(--text-muted);
+        }
+
+        /* --- HABITS MODAL --- */
+        .habits-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .habits-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .habits-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .habits-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .habits-header h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .habit-item {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #F3F4F6;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+        }
+
+        .habit-item h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .habit-item p {
+            margin: 0.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .habit-examples {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(65, 105, 225, 0.2);
+        }
+
+        .habit-examples strong {
+            color: var(--text-main);
+            font-size: 0.9rem;
         }
 
         /* --- STORE SECTION --- */
@@ -336,14 +451,17 @@
 <body>
 
     <nav>
-        <div class="logo" onclick="showHome()">WILDCAT STORE</div>
+        <div class="logo" onclick="showHome()">
+            <img src="images/wildcat-logo.png" alt="Wildcat Logo" class="logo-img">
+            <span class="logo-text">WILDCAT STORE</span>
+        </div>
         <a href="#" class="nav-link" onclick="showStore()">View Catalog &rarr;</a>
     </nav>
 
     <div id="home-page">
         <header class="hero">
             <h1>Earn. Save. <span>Redeem.</span></h1>
-            <p>Your hard work pays off. Use your Wildcat Bucks to purchase exclusive school gear, foods, drinks, supplies, and more.</p>
+            <p>Your hard work pays off. Use your Wildcat Bucks to purchase exclusive school gear, items, foods, drinks, supplies, and more.</p>
             <a href="#" onclick="showStore()" class="btn-primary">Browse The Store</a>
         </header>
 
@@ -356,24 +474,84 @@
             </div>
 
             <div class="feature-card">
-                <span class="feature-icon">📚</span>
-                <h3>Academic Excellence</h3>
-                <p>Earn bucks for maintaining high grades and completing assignments.</p>
+                <span class="feature-icon">⭐</span>
+                <h3>Class Behavior & Participation</h3>
+                <p>Earn bucks for excellent classroom behavior, participation, positive attitude, and leadership shown in class.</p>
             </div>
             
-            <div class="feature-card">
-                <span class="feature-icon">🤝</span>
-                <h3>Community Spirit</h3>
-                <p>Earn bucks for helping others and participating in school events.</p>
-            </div>
-            
-            <div class="feature-card">
-                <span class="feature-icon">✨</span>
-                <h3>Positive Action</h3>
-                <p>Earn bucks when your acts of kindness and leadership are spotted.</p>
+            <div class="feature-card" onclick="openHabitsModal()" style="cursor: pointer;">
+                <span class="feature-icon">🎯</span>
+                <h3>Leader in Me 7 Habits</h3>
+                <p>Earn bucks when you apply the 7 Habits. Click to learn the 7 Habits of Highly Effective Students.</p>
             </div>
 
         </section>
+    </div>
+
+    <!-- HABITS MODAL -->
+    <div id="habitsModal" class="habits-modal">
+        <div class="habits-content">
+            <div class="habits-header">
+                <h2>Leader in Me 7 Habits</h2>
+                <button class="close-btn" onclick="closeHabitsModal()">&times;</button>
+            </div>
+
+            <div class="habit-item">
+                <h3>1. Be Proactive</h3>
+                <p>Take responsibility for your actions and focus on what you can control.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Speak up in class, ask for help, complete assignments on time, make good choices.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>2. Begin with the End in Mind</h3>
+                <p>Set goals, define success, and create a plan to achieve it.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Plan your week, study for tests ahead of time, set academic goals, visualize success.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>3. Put First Things First</h3>
+                <p>Prioritize important tasks, manage time wisely, and focus on goals.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Do homework before video games, organize your time, focus during class, say no to distractions.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>4. Think Win-Win</h3>
+                <p>Approach conflicts looking for solutions that benefit everyone.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Share resources with classmates, find compromises, celebrate others' success, help a friend succeed.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>5. Seek First to Understand, Then to Be Understood</h3>
+                <p>Practice empathetic listening to understand others' perspectives.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Listen without interrupting, ask questions, see things from others' viewpoint, be respectful.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>6. Synergize</h3>
+                <p>Work together to achieve more through collaboration and valuing differences.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Join group projects, respect different opinions, work as a team, lean on others' strengths.
+                </div>
+            </div>
+
+            <div class="habit-item">
+                <h3>7. Sharpen the Saw</h3>
+                <p>Take care of your body, mind, and spirit through regular renewal and balance.</p>
+                <div class="habit-examples">
+                    <strong>Examples:</strong> Exercise, read, get good sleep, eat healthy, meditate, take breaks to recharge.
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="store-page" class="store-section">
@@ -476,6 +654,34 @@
                 container.appendChild(card);
             });
         }
+
+        // --- HABITS MODAL FUNCTIONS ---
+        function openHabitsModal() {
+            const modal = document.getElementById('habitsModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeHabitsModal() {
+            const modal = document.getElementById('habitsModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when clicking outside the content
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('habitsModal');
+            if (e.target === modal) {
+                closeHabitsModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeHabitsModal();
+            }
+        });
 
         // --- ENTRANCE ANIMATIONS ---
         document.addEventListener('DOMContentLoaded', () => {
