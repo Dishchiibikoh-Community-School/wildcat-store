@@ -450,7 +450,15 @@
         const IMAGE_BUCKET = 'store-images';
         const IMAGE_FALLBACK = 'images/wildcat-logo.png';
 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const FORCE_FRESH_LOGIN_KEY = 'wildcat_admin_force_fresh_login';
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        });
 
         const loginSection = document.getElementById('loginSection');
         const deniedSection = document.getElementById('deniedSection');
@@ -546,6 +554,31 @@
 
         let deniedState = false;
         let deniedReason = 'Your account is signed out for safety. Please sign in with the approved admin account.';
+
+        function markFreshLoginRequired() {
+            try {
+                window.sessionStorage.setItem(FORCE_FRESH_LOGIN_KEY, '1');
+            } catch (error) {
+                console.warn('Session flag warning:', error);
+            }
+        }
+
+        function clearFreshLoginRequired() {
+            try {
+                window.sessionStorage.removeItem(FORCE_FRESH_LOGIN_KEY);
+            } catch (error) {
+                console.warn('Session flag warning:', error);
+            }
+        }
+
+        function isFreshLoginRequired() {
+            try {
+                return window.sessionStorage.getItem(FORCE_FRESH_LOGIN_KEY) === '1';
+            } catch (error) {
+                console.warn('Session flag warning:', error);
+                return false;
+            }
+        }
 
         function setStatus(target, message, type) {
             target.textContent = message || '';
@@ -992,6 +1025,25 @@
             await refreshList();
         }
 
+        async function forceLocalLogout() {
+            deniedState = false;
+            showView('login');
+            loginForm.reset();
+            itemForm.reset();
+            clearImageSelection();
+            itemsList.innerHTML = '';
+
+            try {
+                await withTimeout(
+                    supabaseClient.auth.signOut({ scope: 'local' }),
+                    3000,
+                    'Local logout timed out.'
+                );
+            } catch (error) {
+                console.warn('Local logout warning:', error);
+            }
+        }
+
         async function fetchItems() {
             const { data, error } = await supabaseClient
                 .from('items')
@@ -1231,6 +1283,7 @@
                 }
 
                 clearRateState();
+                clearFreshLoginRequired();
                 updateRateLimitUi();
                 setStatus(loginStatus, 'Logged in.', 'success');
                 showView('admin');
@@ -1316,6 +1369,7 @@
         logoutBtn.addEventListener('click', async () => {
             logoutBtn.disabled = true;
             deniedState = false;
+            markFreshLoginRequired();
             showView('login');
             setStatus(loginStatus, 'Logging out...', null);
             loginForm.reset();
@@ -1353,6 +1407,13 @@
             }, 1000);
 
             try {
+                if (isFreshLoginRequired()) {
+                    clearFreshLoginRequired();
+                    await forceLocalLogout();
+                    setStatus(loginStatus, 'Please log in again to continue.', null);
+                    return;
+                }
+
                 await updateUiForSession();
             } catch (error) {
                 console.error(error);
@@ -1367,6 +1428,21 @@
                     console.error(error);
                 }
             });
+        });
+
+        window.addEventListener('pagehide', () => {
+            markFreshLoginRequired();
+            void supabaseClient.auth.signOut({ scope: 'local' }).catch(() => {});
+        });
+
+        window.addEventListener('pageshow', async (event) => {
+            if (!event.persisted) {
+                return;
+            }
+
+            markFreshLoginRequired();
+            await forceLocalLogout();
+            setStatus(loginStatus, 'Please log in again to continue.', null);
         });
     </script>
 </body>
