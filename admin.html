@@ -583,6 +583,63 @@
         let deniedReason = 'Your account is signed out for safety. Please sign in with the approved admin account.';
         let explicitLoginThisLoad = false;
         let loginAttemptInProgress = false;
+        let itemsRealtimeChannel = null;
+        let realtimeRefreshTimer = null;
+
+        function teardownItemsRealtime() {
+            if (realtimeRefreshTimer) {
+                window.clearTimeout(realtimeRefreshTimer);
+                realtimeRefreshTimer = null;
+            }
+
+            if (!itemsRealtimeChannel) {
+                return;
+            }
+
+            try {
+                supabaseClient.removeChannel(itemsRealtimeChannel);
+            } catch (error) {
+                console.warn('Realtime unsubscribe warning:', error);
+            }
+            itemsRealtimeChannel = null;
+        }
+
+        function scheduleRealtimeRefresh() {
+            if (realtimeRefreshTimer) {
+                return;
+            }
+
+            realtimeRefreshTimer = window.setTimeout(async () => {
+                realtimeRefreshTimer = null;
+
+                if (!adminSection.classList.contains('show')) {
+                    return;
+                }
+
+                try {
+                    await refreshList();
+                } catch (error) {
+                    console.warn('Realtime refresh warning:', error);
+                }
+            }, 300);
+        }
+
+        function ensureItemsRealtime() {
+            if (itemsRealtimeChannel) {
+                return;
+            }
+
+            itemsRealtimeChannel = supabaseClient
+                .channel('admin-items-live')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'items' },
+                    () => {
+                        void scheduleRealtimeRefresh();
+                    }
+                )
+                .subscribe();
+        }
 
         function markFreshLoginRequired() {
             try {
@@ -1036,11 +1093,13 @@
 
             const user = data.session?.user || null;
             if (!user) {
+                teardownItemsRealtime();
                 showView(deniedState ? 'denied' : 'login');
                 return;
             }
 
             if (!explicitLoginThisLoad) {
+                teardownItemsRealtime();
                 await forceLocalLogout();
                 setStatus(loginStatus, 'Please log in again to continue.', null);
                 return;
@@ -1057,12 +1116,14 @@
 
             deniedState = false;
             showView('admin');
+            ensureItemsRealtime();
             await refreshList();
         }
 
         async function forceLocalLogout() {
             explicitLoginThisLoad = false;
             deniedState = false;
+            teardownItemsRealtime();
             showView('login');
             loginForm.reset();
             itemForm.reset();
@@ -1369,6 +1430,7 @@
                 updateRateLimitUi();
                 setStatus(loginStatus, 'Logged in.', 'success');
                 showView('admin');
+                ensureItemsRealtime();
                 await refreshList();
             } catch (error) {
                 console.error(error);
@@ -1458,6 +1520,7 @@
         logoutBtn.addEventListener('click', async () => {
             logoutBtn.disabled = true;
             deniedState = false;
+            teardownItemsRealtime();
             markFreshLoginRequired();
             showView('login');
             setStatus(loginStatus, 'Logging out...', null);
@@ -1524,6 +1587,7 @@
         });
 
         window.addEventListener('pagehide', () => {
+            teardownItemsRealtime();
             markFreshLoginRequired();
             void supabaseClient.auth.signOut({ scope: 'local' }).catch(() => {});
         });
