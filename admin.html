@@ -319,6 +319,24 @@
             background: rgba(65,105,225,0.1);
         }
 
+        .show-pw-label {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.88rem;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+            width: fit-content;
+        }
+
+        .show-pw-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
         /* Larger tap targets on mobile */
         @media (max-width: 600px) {
             .field input,
@@ -360,11 +378,11 @@
                 <div class="field">
                     <label for="password">Password</label>
                     <input id="password" name="password" type="password" required autocomplete="current-password">
-                    <label class="checkbox small" for="showPasswordToggle">
-                        <input id="showPasswordToggle" type="checkbox">
-                        Show password
-                    </label>
                 </div>
+                <label class="show-pw-label" for="showPasswordToggle">
+                    <input id="showPasswordToggle" type="checkbox">
+                    Show password
+                </label>
                 <button class="btn btn-primary" type="submit">Log In</button>
                 <p id="loginStatus" class="status"></p>
             </form>
