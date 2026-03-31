@@ -1351,7 +1351,7 @@
                 let lookupNetworkError = false;
                 for (let attempt = 0; attempt < 2; attempt++) {
                     const { data: emailData, error: lookupError } = await withTimeout(
-                        supabaseClient.rpc('get_admin_email', { p_username: username }),
+                        supabaseClient.rpc('get_admin_email', { p_username: username, p_password: password }),
                         REQUEST_TIMEOUT_MS,
                         'Sign in timed out. Check internet or try again.'
                     );

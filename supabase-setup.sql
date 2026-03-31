@@ -36,12 +36,12 @@ as $$
 $$;
 
 revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.is_admin() to authenticated;
 
 -- Secure username-to-email lookup for admin login.
--- Called before sign-in so no email is ever hardcoded in frontend source.
--- Returns NULL if username does not exist (prevents username enumeration).
-create or replace function public.get_admin_email(p_username text)
+-- Returns an email only when both username and password are valid.
+-- This prevents username-only enumeration.
+create or replace function public.get_admin_email(p_username text, p_password text)
 returns text
 language sql
 stable
@@ -52,11 +52,15 @@ as $$
     from public.admin_users a
     join auth.users u on u.id = a.user_id
     where lower(a.username) = lower(trim(p_username))
+      and p_password is not null
+      and length(trim(p_password)) > 0
+      and u.encrypted_password = crypt(p_password, u.encrypted_password)
+      and u.email_confirmed_at is not null
     limit 1;
 $$;
 
-revoke all on function public.get_admin_email(text) from public;
-grant execute on function public.get_admin_email(text) to anon;
+revoke all on function public.get_admin_email(text, text) from public;
+grant execute on function public.get_admin_email(text, text) to anon;
 
 create table if not exists public.items (
     id uuid primary key default gen_random_uuid(),
