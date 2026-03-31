@@ -585,11 +585,17 @@
         let loginAttemptInProgress = false;
         let itemsRealtimeChannel = null;
         let realtimeRefreshTimer = null;
+        let listBootstrapTimer = null;
 
         function teardownItemsRealtime() {
             if (realtimeRefreshTimer) {
                 window.clearTimeout(realtimeRefreshTimer);
                 realtimeRefreshTimer = null;
+            }
+
+            if (listBootstrapTimer) {
+                window.clearTimeout(listBootstrapTimer);
+                listBootstrapTimer = null;
             }
 
             if (!itemsRealtimeChannel) {
@@ -639,6 +645,26 @@
                     }
                 )
                 .subscribe();
+        }
+
+        function scheduleListBootstrapRefresh(delayMs = 0) {
+            if (listBootstrapTimer) {
+                window.clearTimeout(listBootstrapTimer);
+            }
+
+            listBootstrapTimer = window.setTimeout(async () => {
+                listBootstrapTimer = null;
+
+                if (!adminSection.classList.contains('show')) {
+                    return;
+                }
+
+                try {
+                    await refreshList();
+                } catch (error) {
+                    console.warn('Bootstrap refresh warning:', error);
+                }
+            }, delayMs);
         }
 
         function markFreshLoginRequired() {
@@ -750,6 +776,8 @@
             if (view === 'admin') {
                 adminSection.classList.add('show');
                 logoutBtn.style.display = 'inline-flex';
+                scheduleListBootstrapRefresh(0);
+                scheduleListBootstrapRefresh(400);
                 return;
             }
 
@@ -1147,6 +1175,7 @@
             showView('admin');
             ensureItemsRealtime();
             await refreshList();
+            scheduleListBootstrapRefresh(600);
         }
 
         async function forceLocalLogout() {
@@ -1457,6 +1486,7 @@
                 showView('admin');
                 ensureItemsRealtime();
                 await refreshList();
+                scheduleListBootstrapRefresh(600);
             } catch (error) {
                 console.error(error);
                 explicitLoginThisLoad = false;
@@ -1625,6 +1655,18 @@
             markFreshLoginRequired();
             await forceLocalLogout();
             setStatus(loginStatus, 'Please log in again to continue.', null);
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && adminSection.classList.contains('show')) {
+                scheduleListBootstrapRefresh(150);
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            if (adminSection.classList.contains('show')) {
+                scheduleListBootstrapRefresh(150);
+            }
         });
     </script>
 </body>
