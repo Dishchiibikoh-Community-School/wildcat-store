@@ -360,6 +360,10 @@
                 <div class="field">
                     <label for="password">Password</label>
                     <input id="password" name="password" type="password" required autocomplete="current-password">
+                    <label class="checkbox small" for="showPasswordToggle">
+                        <input id="showPasswordToggle" type="checkbox">
+                        Show password
+                    </label>
                 </div>
                 <button class="btn btn-primary" type="submit">Log In</button>
                 <p id="loginStatus" class="status"></p>
@@ -470,6 +474,8 @@
         const backToLoginBtn = document.getElementById('backToLoginBtn');
         const itemsList = document.getElementById('itemsList');
         const deniedMessage = document.getElementById('deniedMessage');
+        const passwordInput = document.getElementById('password');
+        const showPasswordToggle = document.getElementById('showPasswordToggle');
 
         const loginStatus = document.getElementById('loginStatus');
         const itemStatus = document.getElementById('itemStatus');
@@ -526,6 +532,9 @@
             return itemImageCamera.files[0] || itemImage.files[0] || null;
         }
 
+        showPasswordToggle.addEventListener('change', () => {
+            passwordInput.type = showPasswordToggle.checked ? 'text' : 'password';
+        });
 
         const RATE_LIMIT_KEY = 'wildcat_admin_login_rate_v1';
         const RATE_LIMIT_MAX_ATTEMPTS = 5;
