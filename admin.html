@@ -443,6 +443,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script>
         const SUPABASE_URL = 'https://gqmpyyozvyifdtkeccnq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXB5eW96dnlpZmR0a2VjY25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzI5MDUsImV4cCI6MjA5MDU0ODkwNX0.UYygcFzPtStTQu_MQtfIzF5vq1-S0lbB_O5WK2NEgNk';
@@ -746,6 +747,48 @@
             return 'image/jpeg';
         }
 
+        async function normalizeImageFile(file) {
+            const lowerName = String(file.name || '').toLowerCase();
+            const isHeic =
+                file.type === 'image/heic'
+                || file.type === 'image/heif'
+                || lowerName.endsWith('.heic')
+                || lowerName.endsWith('.heif');
+
+            if (!isHeic) {
+                return file;
+            }
+
+            if (typeof window.heic2any !== 'function') {
+                throw new Error('This iPhone photo format is not supported right now. Please try again in a moment.');
+            }
+
+            let convertedBlob;
+            try {
+                convertedBlob = await window.heic2any({
+                    blob: file,
+                    toType: 'image/jpeg',
+                    quality: 0.9
+                });
+            } catch (error) {
+                throw new Error('This iPhone photo could not be converted. Please retake it or choose a different image.');
+            }
+
+            const outputBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            if (!(outputBlob instanceof Blob) || outputBlob.size === 0) {
+                throw new Error('This iPhone photo could not be converted. Please retake it or choose a different image.');
+            }
+
+            return new File(
+                [outputBlob],
+                `${fileBaseName(file.name)}.jpg`,
+                {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                }
+            );
+        }
+
         function loadImageElement(file) {
             return new Promise((resolve, reject) => {
                 const objectUrl = URL.createObjectURL(file);
@@ -777,7 +820,7 @@
                         || lowerName.endsWith('.heif');
 
                     if (isHeic) {
-                        reject(new Error('This photo is HEIC/HEIF and could not be processed by this browser. On iPhone, set Camera > Formats to Most Compatible, then retake the photo.'));
+                        reject(new Error('This iPhone photo needs conversion before upload. Please try again.'));
                         return;
                     }
 
@@ -878,10 +921,11 @@
                 throw new Error('Image is too large. Please use an image below 20 MB.');
             }
 
-            const image = await loadImageElement(file);
+            const normalizedFile = await normalizeImageFile(file);
+            const image = await loadImageElement(normalizedFile);
             const [full, thumb] = await Promise.all([
-                optimizeVariantFromImage(image, file.name, 'full', IMAGE_VARIANTS.full),
-                optimizeVariantFromImage(image, file.name, 'thumb', IMAGE_VARIANTS.thumb)
+                optimizeVariantFromImage(image, normalizedFile.name, 'full', IMAGE_VARIANTS.full),
+                optimizeVariantFromImage(image, normalizedFile.name, 'thumb', IMAGE_VARIANTS.thumb)
             ]);
 
             if (image && typeof image.close === 'function') {
@@ -889,7 +933,7 @@
             }
 
             return {
-                originalBytes: file.size,
+                originalBytes: normalizedFile.size,
                 full,
                 thumb,
                 totalOptimizedBytes: full.bytes + thumb.bytes
