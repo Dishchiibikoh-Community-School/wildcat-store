@@ -674,6 +674,35 @@
             }
         }
 
+        function isRpcSignatureMismatch(error) {
+            const code = String(error?.code || '').toUpperCase();
+            const msg = String(error?.message || '').toLowerCase();
+            if (code === 'PGRST202') {
+                return true;
+            }
+            return msg.includes('could not find the function') || msg.includes('function public.get_admin_email');
+        }
+
+        async function lookupAdminEmail(username, password) {
+            // Preferred secure signature: username + password.
+            let response = await withTimeout(
+                supabaseClient.rpc('get_admin_email', { p_username: username, p_password: password }),
+                REQUEST_TIMEOUT_MS,
+                'Sign in timed out. Check internet or try again.'
+            );
+
+            // Backward compatibility for projects that still have old SQL function signature.
+            if (response.error && isRpcSignatureMismatch(response.error)) {
+                response = await withTimeout(
+                    supabaseClient.rpc('get_admin_email', { p_username: username }),
+                    REQUEST_TIMEOUT_MS,
+                    'Sign in timed out. Check internet or try again.'
+                );
+            }
+
+            return response;
+        }
+
         async function withTimeout(promise, timeoutMs, timeoutMessage) {
             let timeoutHandle;
             const timeoutPromise = new Promise((_, reject) => {
@@ -1350,11 +1379,7 @@
                 let adminEmail = null;
                 let lookupNetworkError = false;
                 for (let attempt = 0; attempt < 2; attempt++) {
-                    const { data: emailData, error: lookupError } = await withTimeout(
-                        supabaseClient.rpc('get_admin_email', { p_username: username, p_password: password }),
-                        REQUEST_TIMEOUT_MS,
-                        'Sign in timed out. Check internet or try again.'
-                    );
+                    const { data: emailData, error: lookupError } = await lookupAdminEmail(username, password);
                     if (lookupError) {
                         const msg = String(lookupError.message || '').toLowerCase();
                         const isNet = msg.includes('fetch') || msg.includes('timed out') || msg.includes('network');
