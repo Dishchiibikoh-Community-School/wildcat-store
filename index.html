@@ -322,6 +322,18 @@
             margin: 0 auto;
         }
 
+        .store-status {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.06);
+            color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
         /* --- ITEM CARDS --- */
         .item-card {
             background: var(--bg-card);
@@ -455,6 +467,7 @@
             <img src="images/wildcat-logo.png" alt="Wildcat Logo" class="logo-img">
             <span class="logo-text">WILDCAT STORE</span>
         </div>
+        <a href="admin.html" class="nav-link">Admin</a>
     </nav>
 
     <div id="home-page">
@@ -567,41 +580,26 @@
         <p style="font-size: 0.9rem; color: #888;">Prices listed in WILDCAT BUCKS (WB). In person redemption only.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // --- DATA ---
-        // Edit this list to change items
-        const items = [
-            { id: 101, name: "Wildcat Hoodie", price: 2000, category: "Apparel", image: "https://placehold.co/400x400/4169E1/FFFFFF/png?text=Hoodie", description: "Heavyweight cotton blend hoodie with embroidered school logo.", inStock: true },
-            { id: 102, name: "Matte Water Bottle", price: 80, category: "Accessories", image: "https://placehold.co/400x400/333333/FFFFFF/png?text=Bottle", description: "Insulated stainless steel bottle. Keeps water cold for 12 hours.", inStock: true },
-            { id: 103, name: "Neon Gel Pens", price: 25, category: "Stationery", image: "https://placehold.co/400x400/FF5733/FFFFFF/png?text=Gel+Pens", description: "Pack of 5 neon colors. Smooth writing ink for projects.", inStock: true },
-            { id: 104, name: "Wireless Earbuds", price: 200, category: "Tech", image: "https://placehold.co/400x400/E1E1E1/333333/png?text=Earbuds", description: "Bluetooth 5.0 earbuds with charging case.", inStock: true },
-            { id: 105, name: "Knit Beanie", price: 60, category: "Apparel", image: "https://placehold.co/400x400/4169E1/FFFFFF/png?text=Beanie", description: "Warm winter hat with pom-pom and school colors.", inStock: true },
-            { id: 106, name: "Spiral Notebook", price: 15, category: "Stationery", image: "https://placehold.co/400x400/eeeeee/333333/png?text=Notebook", description: "100 pages, durable cover, 3-hole punched.", inStock: true },
-            { id: 107, name: "Spirit Lanyard", price: 20, category: "Accessories", image: "https://placehold.co/400x400/4169E1/FFFFFF/png?text=Lanyard", description: "Durable nylon lanyard with breakaway safety clasp.", inStock: true },
-            { id: 108, name: "Phone Stand", price: 45, category: "Tech", image: "https://placehold.co/400x400/333333/FFFFFF/png?text=Stand", description: "Adjustable angle stand for phones and small tablets.", inStock: true },
-            { id: 109, name: "Sticker Pack", price: 10, category: "Fun", image: "https://placehold.co/400x400/FFC300/333333/png?text=Stickers", description: "Assorted waterproof stickers for laptops and bottles.", inStock: true },
-            { id: 110, name: "Baseball Cap", price: 75, category: "Apparel", image: "https://placehold.co/400x400/FFFFFF/4169E1/png?text=Cap", description: "Adjustable strap back, embroidered front logo.", inStock: true },
-            { id: 111, name: "Pencil Kit", price: 30, category: "Stationery", image: "https://placehold.co/400x400/777777/FFFFFF/png?text=Pencils", description: "Includes 2 mechanical pencils, lead, and erasers.", inStock: true },
-            { id: 112, name: "Gym Bag", price: 50, category: "Accessories", image: "https://placehold.co/400x400/4169E1/FFFFFF/png?text=Bag", description: "Lightweight drawstring bag with reinforced corners.", inStock: true },
-            { id: 113, name: "Stress Ball", price: 15, category: "Fun", image: "https://placehold.co/400x400/FF5733/FFFFFF/png?text=Stress+Ball", description: "Foam squeeze ball in school colors.", inStock: true },
-            { id: 114, name: "Highlighters", price: 20, category: "Stationery", image: "https://placehold.co/400x400/FFC0CB/333333/png?text=Markers", description: "Set of 4 gentle pastel colors, double-ended.", inStock: true },
-            { id: 115, name: "LED Key Light", price: 35, category: "Tech", image: "https://placehold.co/400x400/1a1a1a/FFFF00/png?text=Light", description: "Bright mini-flashlight with keychain attachment.", inStock: false }
-        ];
+        const SUPABASE_URL = 'https://gqmpyyozvyifdtkeccnq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXB5eW96dnlpZmR0a2VjY25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzI5MDUsImV4cCI6MjA5MDU0ODkwNX0.UYygcFzPtStTQu_MQtfIzF5vq1-S0lbB_O5WK2NEgNk';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --- PAGE SWITCHING ---
-        function showStore() {
+        async function showStore() {
             const home = document.getElementById('home-page');
             const store = document.getElementById('store-page');
             
             // Fade out home
             home.style.opacity = '0';
-            setTimeout(() => {
+            setTimeout(async () => {
                 home.style.display = 'none';
                 store.style.display = 'block';
                 // Trigger reflow
                 void store.offsetWidth; 
                 store.style.opacity = '1'; // Fade in store
-                renderItems();
+                await renderItems();
                 window.scrollTo(0,0);
             }, 300);
         }
@@ -621,32 +619,90 @@
         }
 
         // --- RENDER ITEMS ---
-        function renderItems() {
+        function toCurrencyDisplay(price) {
+            const numericPrice = Number(price);
+            if (Number.isNaN(numericPrice)) return '0';
+            return numericPrice % 1 === 0 ? String(numericPrice) : numericPrice.toFixed(2);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function fetchItems() {
+            const { data, error } = await supabaseClient
+                .from('items')
+                .select('id, name, price, category, image_url, thumb_url, description, in_stock')
+                .order('price', { ascending: false })
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+
+            return data || [];
+        }
+
+        function renderStatus(message) {
             const container = document.getElementById('grid-container');
-            if(container.innerHTML !== "") return; // Don't re-render if loaded
+            container.innerHTML = `<div class="store-status">${escapeHtml(message)}</div>`;
+        }
+
+        async function renderItems() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+
+            renderStatus('Loading items...');
+
+            let items = [];
+            try {
+                items = await fetchItems();
+            } catch (error) {
+                console.error('Failed to load store items:', error);
+                renderStatus('Unable to load items right now. Please try again in a moment.');
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (items.length === 0) {
+                renderStatus('No items yet. The admin can add products from the Admin page.');
+                return;
+            }
 
             items.forEach((item, index) => {
                 const card = document.createElement('article');
                 card.className = 'item-card';
-                if(!item.inStock) card.classList.add('out-of-stock');
+                if(!item.in_stock) card.classList.add('out-of-stock');
                 
                 // Staggered Animation Delay
                 setTimeout(() => {
                     card.classList.add('visible');
                 }, index * 50);
 
+                const itemName = escapeHtml(item.name);
+                const itemCategory = escapeHtml(item.category || 'General');
+                const itemDescription = escapeHtml(item.description || '');
+                const itemImageUrl = escapeHtml(item.thumb_url || item.image_url || '');
+                const priceValue = toCurrencyDisplay(item.price);
+
                 card.innerHTML = `
                     <div class="card-image-wrapper">
-                        <img src="${item.image}" alt="${item.name}">
-                        ${!item.inStock ? '<span class="badge-stock">OUT OF STOCK</span>' : ''}
+                        <img src="${itemImageUrl}" alt="${itemName}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer">
+                        ${!item.in_stock ? '<span class="badge-stock">OUT OF STOCK</span>' : ''}
                     </div>
                     <div class="card-content">
-                        <div class="card-category">${item.category}</div>
-                        <h3 class="card-title">${item.name}</h3>
-                        <p class="card-desc">${item.description}</p>
+                        <div class="card-category">${itemCategory}</div>
+                        <h3 class="card-title">${itemName}</h3>
+                        <p class="card-desc">${itemDescription}</p>
                         <div class="card-footer">
-                            <span class="price-tag">${item.price} <span class="wb-label">WB</span></span>
-                            <span class="wb-label">${item.inStock ? 'In Person Only' : 'Unavailable'}</span>
+                            <span class="price-tag">${priceValue} <span class="wb-label">WB</span></span>
+                            <span class="wb-label">${item.in_stock ? 'In Person Only' : 'Unavailable'}</span>
                         </div>
                     </div>
                 `;
@@ -702,6 +758,20 @@
                 el.style.transition = `all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 0.1}s`;
                 observer.observe(el);
             });
+
+            supabaseClient
+                .channel('store-items-live')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'items' },
+                    () => {
+                        const storePage = document.getElementById('store-page');
+                        if (storePage.style.display === 'block') {
+                            renderItems();
+                        }
+                    }
+                )
+                .subscribe();
         });
     </script>
 </body>

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildcat Store Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4169E1;
+            --primary-dark: #2c4a9e;
+            --danger: #b91c1c;
+            --danger-dark: #7f1d1d;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --radius: 14px;
+            --shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, rgba(65, 105, 225, 0.1), transparent 40%), var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.2rem;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .topbar h1 {
+            font-size: clamp(1.4rem, 2.5vw, 2.1rem);
+            color: var(--primary);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 999px;
+            font-weight: 700;
+            padding: 0.6rem 1.05rem;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+            color: #fff;
+        }
+
+        .btn-ghost {
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.1);
+            color: var(--text);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 930px) {
+            .layout {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 1rem;
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .stack {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .field {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .field label {
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            border: 1px solid rgba(0,0,0,0.16);
+            border-radius: 10px;
+            padding: 0.65rem 0.7rem;
+            font: inherit;
+            background: #fff;
+        }
+
+        .field textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .inline-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.65rem;
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.2rem;
+            font-size: 0.9rem;
+        }
+
+        .status {
+            min-height: 1.2rem;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .status.error {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .status.success {
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .items-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 72px 1fr auto;
+            gap: 0.8rem;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 0.55rem;
+        }
+
+        .thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #eee;
+        }
+
+        .meta h3 {
+            font-size: 0.98rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .meta p {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 0.1rem;
+        }
+
+        .price {
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .login-only,
+        .admin-only {
+            display: none;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .small {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .warning-box {
+            border: 1px solid rgba(185, 28, 28, 0.25);
+            background: rgba(185, 28, 28, 0.08);
+            color: #7f1d1d;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+
+        /* Mobile-friendly image picker */
+        .img-picker {
+            border: 2px dashed rgba(65,105,225,0.35);
+            border-radius: 12px;
+            padding: 1rem;
+            display: grid;
+            gap: 0.75rem;
+            background: rgba(65,105,225,0.03);
+        }
+
+        .img-preview-wrap {
+            display: none;
+            position: relative;
+        }
+
+        .img-preview-wrap.show {
+            display: block;
+        }
+
+        .img-preview {
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: #f9fafb;
+        }
+
+        .img-clear {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            cursor: pointer;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .img-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.55rem;
+        }
+
+        .btn-img {
+            border: 1.5px solid rgba(65,105,225,0.4);
+            background: #fff;
+            color: var(--primary);
+            border-radius: 10px;
+            padding: 0.7rem 0.5rem;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            transition: background 0.15s;
+            /* large tap target for mobile */
+            min-height: 48px;
+        }
+
+        .btn-img:active {
+            background: rgba(65,105,225,0.1);
+        }
+
+        /* Larger tap targets on mobile */
+        @media (max-width: 600px) {
+            .field input,
+            .field textarea {
+                font-size: 16px; /* prevents iOS zoom */
+                min-height: 48px;
+                padding: 0.75rem;
+            }
+
+            .btn {
+                min-height: 48px;
+                font-size: 1rem;
+            }
+
+            .inline-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="topbar">
+            <h1>Wildcat Store Admin</h1>
+            <div class="actions">
+                <a href="index.html" class="btn btn-ghost">Open Store</a>
+                <button id="logoutBtn" class="btn btn-danger" type="button" style="display:none;">Log Out</button>
+            </div>
+        </div>
+
+        <div id="loginSection" class="card login-only show">
+            <h2>Staff Login</h2>
+            <p class="hint">Sign in with your staff username and password.</p>
+            <form id="loginForm" class="stack">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input id="username" name="username" type="text" required autocomplete="username" spellcheck="false">
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" required autocomplete="current-password">
+                </div>
+                <button class="btn btn-primary" type="submit">Log In</button>
+                <p id="loginStatus" class="status"></p>
+            </form>
+        </div>
+
+        <div id="deniedSection" class="card login-only">
+            <h2>Access Denied</h2>
+            <p class="hint">This account is not allowed to manage store inventory.</p>
+            <div class="warning-box" id="deniedMessage">
+                Your account is signed out for safety. Please sign in with the approved admin account.
+            </div>
+            <div class="actions" style="margin-top: 0.9rem;">
+                <button id="backToLoginBtn" class="btn btn-ghost" type="button">Back to Login</button>
+            </div>
+        </div>
+
+        <div id="adminSection" class="layout admin-only">
+            <div class="card">
+                <h2>Add Item</h2>
+                <p class="hint">Only uploaded items appear on the live store page.</p>
+                <form id="itemForm" class="stack">
+                    <div class="field">
+                        <label for="itemName">Item Name</label>
+                        <input id="itemName" name="itemName" required maxlength="120">
+                    </div>
+                    <div class="inline-row">
+                        <div class="field">
+                            <label for="itemPrice">Price (WB)</label>
+                            <input id="itemPrice" name="itemPrice" type="number" min="0" step="0.01" required>
+                        </div>
+                        <div class="field">
+                            <label for="itemCategory">Category</label>
+                            <input id="itemCategory" name="itemCategory" maxlength="80" placeholder="General">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="itemDescription">Description</label>
+                        <textarea id="itemDescription" name="itemDescription" maxlength="260" placeholder="Optional"></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Image</label>
+                        <div class="img-picker">
+                            <div class="img-preview-wrap" id="imgPreviewWrap">
+                                <img id="imgPreview" class="img-preview" src="" alt="Preview">
+                                <button type="button" class="img-clear" id="imgClearBtn" title="Remove image">✕</button>
+                            </div>
+                            <div class="img-btns">
+                                <button type="button" class="btn-img" id="takePicBtn">
+                                    📷 Take Photo
+                                </button>
+                                <button type="button" class="btn-img" id="chooseFileBtn">
+                                    🖼️ Choose File
+                                </button>
+                            </div>
+                            <!-- Hidden: camera, direct capture -->
+                            <input id="itemImageCamera" type="file" accept="image/*" capture="environment" style="display:none;">
+                            <!-- Hidden: gallery / file browser -->
+                            <input id="itemImage" name="itemImage" type="file" accept="image/*" style="display:none;">
+                            <p class="small" id="imgFileName">No image selected.</p>
+                        </div>
+                        <p class="small">Auto-compressed before upload to keep the site fast.</p>
+                    </div>
+                    <label class="checkbox">
+                        <input id="itemStock" name="itemStock" type="checkbox" checked>
+                        In stock
+                    </label>
+                    <button class="btn btn-primary" type="submit">Upload Item</button>
+                    <p class="small">Tip: prices are sorted high to low on the storefront.</p>
+                    <p id="itemStatus" class="status"></p>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Current Items</h2>
+                <p class="hint">Delete items here and they disappear from the live website.</p>
+                <div id="itemsList" class="items-list"></div>
+                <p id="listStatus" class="status"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://gqmpyyozvyifdtkeccnq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXB5eW96dnlpZmR0a2VjY25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzI5MDUsImV4cCI6MjA5MDU0ODkwNX0.UYygcFzPtStTQu_MQtfIzF5vq1-S0lbB_O5WK2NEgNk';
+        const IMAGE_BUCKET = 'store-images';
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const loginSection = document.getElementById('loginSection');
+        const deniedSection = document.getElementById('deniedSection');
+        const adminSection = document.getElementById('adminSection');
+        const loginForm = document.getElementById('loginForm');
+        const itemForm = document.getElementById('itemForm');
+        const itemStock = document.getElementById('itemStock');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const backToLoginBtn = document.getElementById('backToLoginBtn');
+        const itemsList = document.getElementById('itemsList');
+        const deniedMessage = document.getElementById('deniedMessage');
+
+        const loginStatus = document.getElementById('loginStatus');
+        const itemStatus = document.getElementById('itemStatus');
+        const listStatus = document.getElementById('listStatus');
+
+        // Image picker wiring
+        const itemImage        = document.getElementById('itemImage');
+        const itemImageCamera  = document.getElementById('itemImageCamera');
+        const takePicBtn       = document.getElementById('takePicBtn');
+        const chooseFileBtn    = document.getElementById('chooseFileBtn');
+        const imgPreview       = document.getElementById('imgPreview');
+        const imgPreviewWrap   = document.getElementById('imgPreviewWrap');
+        const imgClearBtn      = document.getElementById('imgClearBtn');
+        const imgFileName      = document.getElementById('imgFileName');
+
+        function applyImagePreview(file) {
+            if (!file) return;
+            imgFileName.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+            const reader = new FileReader();
+            reader.onload = e => {
+                imgPreview.src = e.target.result;
+                imgPreviewWrap.classList.add('show');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImageSelection() {
+            itemImage.value = '';
+            itemImageCamera.value = '';
+            imgPreview.src = '';
+            imgPreviewWrap.classList.remove('show');
+            imgFileName.textContent = 'No image selected.';
+        }
+
+        takePicBtn.addEventListener('click', () => itemImageCamera.click());
+        chooseFileBtn.addEventListener('click', () => itemImage.click());
+        imgClearBtn.addEventListener('click', clearImageSelection);
+
+        itemImage.addEventListener('change', () => {
+            if (itemImage.files[0]) {
+                itemImageCamera.value = '';
+                applyImagePreview(itemImage.files[0]);
+            }
+        });
+
+        itemImageCamera.addEventListener('change', () => {
+            if (itemImageCamera.files[0]) {
+                itemImage.value = '';
+                applyImagePreview(itemImageCamera.files[0]);
+            }
+        });
+
+        function getSelectedImageFile() {
+            return itemImageCamera.files[0] || itemImage.files[0] || null;
+        }
+
+
+        const RATE_LIMIT_KEY = 'wildcat_admin_login_rate_v1';
+        const RATE_LIMIT_MAX_ATTEMPTS = 5;
+        const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+        const RATE_LIMIT_LOCK_MS = 15 * 60 * 1000;
+        const REQUEST_TIMEOUT_MS = 12000;
+        const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
+        const IMAGE_VARIANTS = {
+            full: {
+                maxDimension: 1600,
+                targetBytes: 450 * 1024,
+                maxFinalBytes: 900 * 1024,
+                qualityStart: 0.82,
+                qualityMin: 0.55
+            },
+            thumb: {
+                maxDimension: 640,
+                targetBytes: 120 * 1024,
+                maxFinalBytes: 240 * 1024,
+                qualityStart: 0.8,
+                qualityMin: 0.5
+            }
+        };
+
+        const loginSubmitButton = loginForm.querySelector('button[type="submit"]');
+
+        let deniedState = false;
+        let deniedReason = 'Your account is signed out for safety. Please sign in with the approved admin account.';
+
+        function setStatus(target, message, type) {
+            target.textContent = message || '';
+            target.className = 'status';
+            if (type) {
+                target.classList.add(type);
+            }
+        }
+
+        async function withTimeout(promise, timeoutMs, timeoutMessage) {
+            let timeoutHandle;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutHandle = window.setTimeout(() => {
+                    reject(new Error(timeoutMessage));
+                }, timeoutMs);
+            });
+
+            try {
+                return await Promise.race([promise, timeoutPromise]);
+            } finally {
+                window.clearTimeout(timeoutHandle);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showView(view) {
+            loginSection.classList.remove('show');
+            deniedSection.classList.remove('show');
+            adminSection.classList.remove('show');
+
+            if (view === 'admin') {
+                adminSection.classList.add('show');
+                logoutBtn.style.display = 'inline-flex';
+                return;
+            }
+
+            logoutBtn.style.display = 'none';
+            if (view === 'denied') {
+                deniedSection.classList.add('show');
+                deniedMessage.textContent = deniedReason;
+                return;
+            }
+
+            loginSection.classList.add('show');
+        }
+
+        function getRateState() {
+            const now = Date.now();
+            let parsed = { attempts: [], lockedUntil: 0 };
+
+            try {
+                const raw = window.localStorage.getItem(RATE_LIMIT_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (Array.isArray(data.attempts) && typeof data.lockedUntil === 'number') {
+                        parsed = data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Rate limit state parse warning:', error);
+            }
+
+            const attempts = parsed.attempts
+                .filter((timestamp) => Number.isFinite(timestamp))
+                .filter((timestamp) => now - timestamp <= RATE_LIMIT_WINDOW_MS);
+
+            const lockedUntil = Number.isFinite(parsed.lockedUntil) ? parsed.lockedUntil : 0;
+            return { attempts, lockedUntil };
+        }
+
+        function saveRateState(state) {
+            window.localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(state));
+        }
+
+        function clearRateState() {
+            window.localStorage.removeItem(RATE_LIMIT_KEY);
+        }
+
+        function recordFailedLoginAttempt() {
+            const now = Date.now();
+            const state = getRateState();
+            const attempts = [...state.attempts, now];
+            let lockedUntil = state.lockedUntil;
+
+            if (attempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+                lockedUntil = now + RATE_LIMIT_LOCK_MS;
+            }
+
+            saveRateState({ attempts, lockedUntil });
+        }
+
+        function getLockInfo() {
+            const state = getRateState();
+            const now = Date.now();
+
+            if (state.lockedUntil > now) {
+                return {
+                    locked: true,
+                    secondsRemaining: Math.ceil((state.lockedUntil - now) / 1000)
+                };
+            }
+
+            if (state.lockedUntil > 0) {
+                saveRateState({ attempts: state.attempts, lockedUntil: 0 });
+            }
+
+            return { locked: false, secondsRemaining: 0 };
+        }
+
+        function updateRateLimitUi() {
+            const { locked, secondsRemaining } = getLockInfo();
+            if (locked) {
+                const minutes = Math.ceil(secondsRemaining / 60);
+                loginSubmitButton.disabled = true;
+                loginSubmitButton.textContent = `Locked (${minutes}m)`;
+                return;
+            }
+
+            loginSubmitButton.disabled = false;
+            loginSubmitButton.textContent = 'Log In';
+        }
+
+        function formatPrice(price) {
+            const numericPrice = Number(price);
+            if (Number.isNaN(numericPrice)) {
+                return '0';
+            }
+            return numericPrice % 1 === 0 ? String(numericPrice) : numericPrice.toFixed(2);
+        }
+
+        function formatBytes(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) {
+                return '0 B';
+            }
+
+            const units = ['B', 'KB', 'MB'];
+            let size = bytes;
+            let unitIndex = 0;
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex += 1;
+            }
+            const rounded = unitIndex === 0 ? Math.round(size) : size.toFixed(1);
+            return `${rounded} ${units[unitIndex]}`;
+        }
+
+        function fileBaseName(name) {
+            const clean = String(name || 'item-image')
+                .replace(/\.[a-zA-Z0-9]+$/, '')
+                .replace(/[^a-zA-Z0-9_-]/g, '-')
+                .replace(/-+/g, '-');
+            return clean || 'item-image';
+        }
+
+        function canvasToBlob(canvas, type, quality) {
+            return new Promise((resolve, reject) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Image processing failed. Try another image file.'));
+                        return;
+                    }
+                    resolve(blob);
+                }, type, quality);
+            });
+        }
+
+        function loadImageElement(file) {
+            return new Promise((resolve, reject) => {
+                const objectUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(image);
+                };
+                image.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Invalid image file. Please choose a different image.'));
+                };
+                image.src = objectUrl;
+            });
+        }
+
+        function drawScaledImage(canvas, image, width, height) {
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d', { alpha: false });
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, width, height);
+            context.drawImage(image, 0, 0, width, height);
+        }
+
+        async function optimizeVariantFromImage(image, sourceName, variantName, config) {
+            const longestSide = Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height);
+            const initialScale = longestSide > config.maxDimension ? config.maxDimension / longestSide : 1;
+
+            let width = Math.max(1, Math.round((image.naturalWidth || image.width) * initialScale));
+            let height = Math.max(1, Math.round((image.naturalHeight || image.height) * initialScale));
+            const canvas = document.createElement('canvas');
+            const outputType = 'image/webp';
+
+            let bestBlob = null;
+            let quality = config.qualityStart;
+
+            for (let attempt = 0; attempt < 8; attempt += 1) {
+                drawScaledImage(canvas, image, width, height);
+                const blob = await canvasToBlob(canvas, outputType, quality);
+
+                if (!bestBlob || blob.size < bestBlob.size) {
+                    bestBlob = blob;
+                }
+
+                if (blob.size <= config.targetBytes) {
+                    bestBlob = blob;
+                    break;
+                }
+
+                if (quality > config.qualityMin) {
+                    quality = Math.max(config.qualityMin, quality - 0.08);
+                    continue;
+                }
+
+                width = Math.max(320, Math.round(width * 0.85));
+                height = Math.max(320, Math.round(height * 0.85));
+            }
+
+            if (!bestBlob) {
+                throw new Error('Could not process image. Please try again.');
+            }
+
+            if (bestBlob.size > config.maxFinalBytes) {
+                throw new Error(`Optimized ${variantName} is still too large. Use a smaller image.`);
+            }
+
+            const optimizedFile = new File(
+                [bestBlob],
+                `${fileBaseName(sourceName)}-${variantName}-${Date.now()}.webp`,
+                { type: outputType }
+            );
+
+            return {
+                file: optimizedFile,
+                bytes: optimizedFile.size
+            };
+        }
+
+        async function optimizeImageForUpload(file) {
+            if (!(file instanceof File) || file.size === 0 || !String(file.type).startsWith('image/')) {
+                throw new Error('Please choose a valid image file.');
+            }
+
+            if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+                throw new Error('Image is too large. Please use an image below 20 MB.');
+            }
+
+            const image = await loadImageElement(file);
+            const [full, thumb] = await Promise.all([
+                optimizeVariantFromImage(image, file.name, 'full', IMAGE_VARIANTS.full),
+                optimizeVariantFromImage(image, file.name, 'thumb', IMAGE_VARIANTS.thumb)
+            ]);
+
+            return {
+                originalBytes: file.size,
+                full,
+                thumb,
+                totalOptimizedBytes: full.bytes + thumb.bytes
+            };
+        }
+
+        async function isCurrentUserAdmin(userId) {
+            if (!userId) {
+                return false;
+            }
+
+            const { data, error } = await withTimeout(
+                supabaseClient
+                    .from('admin_users')
+                    .select('user_id')
+                    .eq('user_id', userId)
+                    .maybeSingle(),
+                REQUEST_TIMEOUT_MS,
+                'Admin check timed out. Please verify internet and try again.'
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            return Boolean(data?.user_id);
+        }
+
+        async function updateUiForSession() {
+            const { data, error } = await withTimeout(
+                supabaseClient.auth.getSession(),
+                REQUEST_TIMEOUT_MS,
+                'Session check timed out. Please refresh and try again.'
+            );
+            if (error) {
+                throw error;
+            }
+
+            const user = data.session?.user || null;
+            if (!user) {
+                showView(deniedState ? 'denied' : 'login');
+                return;
+            }
+
+            const adminAllowed = await isCurrentUserAdmin(user.id);
+            if (!adminAllowed) {
+                deniedState = true;
+                deniedReason = 'This account is not on the approved admin allowlist.';
+                await supabaseClient.auth.signOut();
+                showView('denied');
+                return;
+            }
+
+            deniedState = false;
+            showView('admin');
+            await refreshList();
+        }
+
+        async function fetchItems() {
+            const { data, error } = await supabaseClient
+                .from('items')
+                .select('id, name, price, category, description, image_url, image_path, thumb_url, thumb_path, in_stock')
+                .order('price', { ascending: false })
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+            return data || [];
+        }
+
+        function renderItems(items) {
+            itemsList.innerHTML = '';
+
+            if (!items.length) {
+                itemsList.innerHTML = '<p class="hint">No items yet. Add your first item from the form.</p>';
+                return;
+            }
+
+            for (const item of items) {
+                const row = document.createElement('article');
+                row.className = 'item-row';
+                const displayImage = item.thumb_url || item.image_url;
+                row.innerHTML = `
+                    <img class="thumb" src="${escapeHtml(displayImage)}" alt="${escapeHtml(item.name)}">
+                    <div class="meta">
+                        <h3>${escapeHtml(item.name)}</h3>
+                        <p>${escapeHtml(item.category || 'General')} | ${item.in_stock ? 'In stock' : 'Out of stock'}</p>
+                        <p>${escapeHtml(item.description || '')}</p>
+                        <div class="price">${formatPrice(item.price)} WB</div>
+                    </div>
+                    <button class="btn btn-danger" type="button" data-id="${item.id}" data-path="${escapeHtml(item.image_path)}" data-thumb-path="${escapeHtml(item.thumb_path || '')}">Delete</button>
+                `;
+                itemsList.appendChild(row);
+            }
+
+            const deleteButtons = itemsList.querySelectorAll('button[data-id]');
+            deleteButtons.forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const itemId = button.getAttribute('data-id');
+                    const imagePath = button.getAttribute('data-path');
+                    const thumbPath = button.getAttribute('data-thumb-path');
+                    if (!itemId) {
+                        return;
+                    }
+
+                    const confirmed = window.confirm('Delete this item from the live store?');
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    button.disabled = true;
+                    setStatus(listStatus, 'Deleting item...', null);
+
+                    try {
+                        const { error: deleteDbError } = await supabaseClient
+                            .from('items')
+                            .delete()
+                            .eq('id', itemId);
+
+                        if (deleteDbError) {
+                            throw deleteDbError;
+                        }
+
+                        const removePaths = [imagePath, thumbPath]
+                            .filter((path) => Boolean(path));
+
+                        if (removePaths.length > 0) {
+                            const { error: removeImageError } = await supabaseClient
+                                .storage
+                                .from(IMAGE_BUCKET)
+                                .remove(removePaths);
+
+                            if (removeImageError) {
+                                console.warn('Image cleanup warning:', removeImageError.message);
+                            }
+                        }
+
+                        setStatus(listStatus, 'Item deleted.', 'success');
+                        await refreshList();
+                    } catch (error) {
+                        console.error(error);
+                        setStatus(listStatus, error.message || 'Failed to delete item.', 'error');
+                    } finally {
+                        button.disabled = false;
+                    }
+                });
+            });
+        }
+
+        async function refreshList() {
+            setStatus(listStatus, 'Loading items...', null);
+            try {
+                const items = await fetchItems();
+                renderItems(items);
+                setStatus(listStatus, '', null);
+            } catch (error) {
+                console.error(error);
+                setStatus(listStatus, error.message || 'Could not load items.', 'error');
+            }
+        }
+
+        async function uploadImageVariants(variants) {
+            const {
+                data: { user },
+                error: userError
+            } = await supabaseClient.auth.getUser();
+
+            if (userError) {
+                throw userError;
+            }
+
+            if (!user?.id) {
+                throw new Error('You must be logged in as admin to upload images.');
+            }
+
+            const timestamp = Date.now();
+
+            async function uploadOne(file, tag) {
+                const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const imagePath = `${user.id}/${timestamp}-${tag}-${cleanName}`;
+
+                const { error: uploadError } = await supabaseClient
+                    .storage
+                    .from(IMAGE_BUCKET)
+                    .upload(imagePath, file, {
+                        cacheControl: '604800',
+                        contentType: file.type || 'image/webp',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: publicUrlData } = supabaseClient
+                    .storage
+                    .from(IMAGE_BUCKET)
+                    .getPublicUrl(imagePath);
+
+                return {
+                    imagePath,
+                    imageUrl: publicUrlData.publicUrl
+                };
+            }
+
+            const uploadedPaths = [];
+            try {
+                const thumbUpload = await uploadOne(variants.thumb.file, 'thumb');
+                uploadedPaths.push(thumbUpload.imagePath);
+
+                const fullUpload = await uploadOne(variants.full.file, 'full');
+                uploadedPaths.push(fullUpload.imagePath);
+
+                return {
+                    imagePath: fullUpload.imagePath,
+                    imageUrl: fullUpload.imageUrl,
+                    thumbPath: thumbUpload.imagePath,
+                    thumbUrl: thumbUpload.imageUrl
+                };
+            } catch (error) {
+                if (uploadedPaths.length > 0) {
+                    await supabaseClient.storage.from(IMAGE_BUCKET).remove(uploadedPaths);
+                }
+                throw error;
+            }
+        }
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const lockInfo = getLockInfo();
+            if (lockInfo.locked) {
+                const minutes = Math.ceil(lockInfo.secondsRemaining / 60);
+                setStatus(loginStatus, `Too many attempts. Try again in about ${minutes} minute(s).`, 'error');
+                updateRateLimitUi();
+                return;
+            }
+
+            deniedState = false;
+            showView('login');
+            setStatus(loginStatus, 'Signing in...', null);
+
+            const formData = new FormData(loginForm);
+            const username = String(formData.get('username') || '').trim().toLowerCase();
+            const password = String(formData.get('password') || '').trim();
+
+            if (!navigator.onLine) {
+                setStatus(loginStatus, 'No internet connection. Reconnect and try again.', 'error');
+                return;
+            }
+
+            if (!username || !password) {
+                setStatus(loginStatus, 'Enter your username and password.', 'error');
+                return;
+            }
+
+            try {
+                // Look up the auth email for this username from the database.
+                // No email is ever stored in frontend source.
+                const { data: adminEmail, error: lookupError } = await withTimeout(
+                    supabaseClient.rpc('get_admin_email', { p_username: username }),
+                    REQUEST_TIMEOUT_MS,
+                    'Sign in timed out. Check internet or try again.'
+                );
+
+                if (lookupError || !adminEmail) {
+                    recordFailedLoginAttempt();
+                    updateRateLimitUi();
+                    setStatus(loginStatus, 'Invalid username or password.', 'error');
+                    return;
+                }
+
+                const { data, error } = await withTimeout(
+                    supabaseClient.auth.signInWithPassword({
+                        email: adminEmail,
+                        password
+                    }),
+                    REQUEST_TIMEOUT_MS,
+                    'Sign in timed out. Check internet or try again.'
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                const userId = data.user?.id || data.session?.user?.id;
+                const adminAllowed = await isCurrentUserAdmin(userId);
+                if (!adminAllowed) {
+                    deniedState = true;
+                    deniedReason = 'This account is not on the approved admin allowlist.';
+                    await supabaseClient.auth.signOut();
+                    throw new Error('This account is not allowed to access admin dashboard.');
+                }
+
+                clearRateState();
+                updateRateLimitUi();
+                setStatus(loginStatus, 'Logged in.', 'success');
+                showView('admin');
+                await refreshList();
+            } catch (error) {
+                recordFailedLoginAttempt();
+                updateRateLimitUi();
+                console.error(error);
+                if (deniedState) {
+                    showView('denied');
+                }
+                const rawMessage = String(error?.message || 'Login failed.');
+                const friendlyMessage = rawMessage.toLowerCase().includes('fetch')
+                    ? 'Cannot reach Supabase. Check internet and project URL/key.'
+                    : rawMessage;
+                setStatus(loginStatus, friendlyMessage, 'error');
+            }
+        });
+
+        itemForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setStatus(itemStatus, 'Preparing image...', null);
+
+            const formData = new FormData(itemForm);
+            const imageFile = getSelectedImageFile();
+
+            if (!(imageFile instanceof File) || imageFile.size === 0) {
+                setStatus(itemStatus, 'Please select or take a photo.', 'error');
+                return;
+            }
+
+            try {
+                const optimizedImage = await optimizeImageForUpload(imageFile);
+                setStatus(
+                    itemStatus,
+                    `Uploading optimized images (thumb ${formatBytes(optimizedImage.thumb.bytes)}, full ${formatBytes(optimizedImage.full.bytes)})...`,
+                    null
+                );
+
+                const { imagePath, imageUrl, thumbPath, thumbUrl } = await uploadImageVariants(optimizedImage);
+
+                const payload = {
+                    name: String(formData.get('itemName') || '').trim(),
+                    price: Number(formData.get('itemPrice')),
+                    category: String(formData.get('itemCategory') || 'General').trim() || 'General',
+                    description: String(formData.get('itemDescription') || '').trim(),
+                    image_url: imageUrl,
+                    image_path: imagePath,
+                    thumb_url: thumbUrl,
+                    thumb_path: thumbPath,
+                    in_stock: itemStock.checked
+                };
+
+                const { error: insertError } = await supabaseClient
+                    .from('items')
+                    .insert(payload);
+
+                if (insertError) {
+                    await supabaseClient.storage.from(IMAGE_BUCKET).remove([imagePath, thumbPath]);
+                    throw insertError;
+                }
+
+                itemForm.reset();
+                clearImageSelection();
+                itemStock.checked = true;
+                const reductionPercent = Math.max(
+                    0,
+                    Math.round((1 - (optimizedImage.totalOptimizedBytes / optimizedImage.originalBytes)) * 100)
+                );
+                setStatus(
+                    itemStatus,
+                    `Item uploaded. Total image weight reduced from ${formatBytes(optimizedImage.originalBytes)} to ${formatBytes(optimizedImage.totalOptimizedBytes)} (${reductionPercent}% smaller).`,
+                    'success'
+                );
+                await refreshList();
+            } catch (error) {
+                console.error(error);
+                setStatus(itemStatus, error.message || 'Upload failed.', 'error');
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            deniedState = false;
+            showView('login');
+            setStatus(loginStatus, 'Logged out.', null);
+            loginForm.reset();
+            updateRateLimitUi();
+        });
+
+        backToLoginBtn.addEventListener('click', () => {
+            deniedState = false;
+            showView('login');
+            setStatus(loginStatus, '', null);
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateRateLimitUi();
+
+            window.setInterval(() => {
+                updateRateLimitUi();
+            }, 1000);
+
+            try {
+                await updateUiForSession();
+            } catch (error) {
+                console.error(error);
+                showView('login');
+                setStatus(loginStatus, error.message || 'Failed to initialize admin session.', 'error');
+            }
+
+            supabaseClient.auth.onAuthStateChange(async () => {
+                try {
+                    await updateUiForSession();
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
