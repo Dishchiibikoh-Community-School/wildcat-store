@@ -416,7 +416,7 @@
                                 </button>
                             </div>
                             <!-- Hidden: camera, direct capture -->
-                            <input id="itemImageCamera" type="file" accept="image/*" capture="environment" style="display:none;">
+                            <input id="itemImageCamera" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;">
                             <!-- Hidden: gallery / file browser -->
                             <input id="itemImage" name="itemImage" type="file" accept="image/*" style="display:none;">
                             <p class="small" id="imgFileName">No image selected.</p>
@@ -754,8 +754,33 @@
                     URL.revokeObjectURL(objectUrl);
                     resolve(image);
                 };
-                image.onerror = () => {
+                image.onerror = async () => {
                     URL.revokeObjectURL(objectUrl);
+
+                    // Some mobile browsers fail to decode certain camera formats via <img>.
+                    // Fallback to createImageBitmap when available.
+                    if (typeof window.createImageBitmap === 'function') {
+                        try {
+                            const bitmap = await window.createImageBitmap(file);
+                            resolve(bitmap);
+                            return;
+                        } catch (bitmapError) {
+                            // Continue to user-facing error below.
+                        }
+                    }
+
+                    const lowerName = String(file.name || '').toLowerCase();
+                    const isHeic =
+                        file.type === 'image/heic'
+                        || file.type === 'image/heif'
+                        || lowerName.endsWith('.heic')
+                        || lowerName.endsWith('.heif');
+
+                    if (isHeic) {
+                        reject(new Error('This photo is HEIC/HEIF and could not be processed by this browser. On iPhone, set Camera > Formats to Most Compatible, then retake the photo.'));
+                        return;
+                    }
+
                     reject(new Error('Invalid image file. Please choose a different image.'));
                 };
                 image.src = objectUrl;
@@ -858,6 +883,10 @@
                 optimizeVariantFromImage(image, file.name, 'full', IMAGE_VARIANTS.full),
                 optimizeVariantFromImage(image, file.name, 'thumb', IMAGE_VARIANTS.thumb)
             ]);
+
+            if (image && typeof image.close === 'function') {
+                image.close();
+            }
 
             return {
                 originalBytes: file.size,
