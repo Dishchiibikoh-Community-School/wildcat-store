@@ -554,6 +554,7 @@
 
         let deniedState = false;
         let deniedReason = 'Your account is signed out for safety. Please sign in with the approved admin account.';
+        let explicitLoginThisLoad = false;
 
         function markFreshLoginRequired() {
             try {
@@ -1011,6 +1012,12 @@
                 return;
             }
 
+            if (!explicitLoginThisLoad) {
+                await forceLocalLogout();
+                setStatus(loginStatus, 'Please log in again to continue.', null);
+                return;
+            }
+
             const adminAllowed = await isCurrentUserAdmin(user.id);
             if (!adminAllowed) {
                 deniedState = true;
@@ -1026,6 +1033,7 @@
         }
 
         async function forceLocalLogout() {
+            explicitLoginThisLoad = false;
             deniedState = false;
             showView('login');
             loginForm.reset();
@@ -1282,6 +1290,7 @@
                     throw new Error('This account is not allowed to access admin dashboard.');
                 }
 
+                explicitLoginThisLoad = true;
                 clearRateState();
                 clearFreshLoginRequired();
                 updateRateLimitUi();
@@ -1407,14 +1416,15 @@
             }, 1000);
 
             try {
+                await forceLocalLogout();
+
                 if (isFreshLoginRequired()) {
                     clearFreshLoginRequired();
-                    await forceLocalLogout();
                     setStatus(loginStatus, 'Please log in again to continue.', null);
                     return;
                 }
 
-                await updateUiForSession();
+                setStatus(loginStatus, 'Please log in to continue.', null);
             } catch (error) {
                 console.error(error);
                 showView('login');
