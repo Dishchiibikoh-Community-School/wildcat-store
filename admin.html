@@ -527,14 +527,14 @@
                 targetBytes: 450 * 1024,
                 maxFinalBytes: 900 * 1024,
                 qualityStart: 0.82,
-                qualityMin: 0.55
+                qualityMin: 0.2
             },
             thumb: {
                 maxDimension: 640,
                 targetBytes: 120 * 1024,
                 maxFinalBytes: 240 * 1024,
                 qualityStart: 0.8,
-                qualityMin: 0.5
+                qualityMin: 0.2
             }
         };
 
@@ -753,7 +753,7 @@
             let bestBlob = null;
             let quality = config.qualityStart;
 
-            for (let attempt = 0; attempt < 8; attempt += 1) {
+            for (let attempt = 0; attempt < 20; attempt += 1) {
                 drawScaledImage(canvas, image, width, height);
                 const blob = await canvasToBlob(canvas, outputType, quality);
 
@@ -767,12 +767,12 @@
                 }
 
                 if (quality > config.qualityMin) {
-                    quality = Math.max(config.qualityMin, quality - 0.08);
+                    quality = Math.max(config.qualityMin, quality - 0.07);
                     continue;
                 }
 
-                width = Math.max(320, Math.round(width * 0.85));
-                height = Math.max(320, Math.round(height * 0.85));
+                width = Math.max(160, Math.round(width * 0.75));
+                height = Math.max(160, Math.round(height * 0.75));
             }
 
             if (!bestBlob) {
@@ -780,7 +780,14 @@
             }
 
             if (bestBlob.size > config.maxFinalBytes) {
-                throw new Error(`Optimized ${variantName} is still too large. Use a smaller image.`);
+                // Emergency pass: force lowest quality at current size
+                drawScaledImage(canvas, image, width, height);
+                const emergencyBlob = await canvasToBlob(canvas, outputType, 0.1);
+                if (emergencyBlob.size <= config.maxFinalBytes) {
+                    bestBlob = emergencyBlob;
+                } else {
+                    throw new Error(`Image could not be compressed enough. Try cropping it first or use a different photo.`);
+                }
             }
 
             const optimizedFile = new File(
