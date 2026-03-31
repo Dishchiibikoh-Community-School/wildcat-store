@@ -1282,13 +1282,40 @@
             try {
                 // Look up the auth email for this username from the database.
                 // No email is ever stored in frontend source.
-                const { data: adminEmail, error: lookupError } = await withTimeout(
-                    supabaseClient.rpc('get_admin_email', { p_username: username }),
-                    REQUEST_TIMEOUT_MS,
-                    'Sign in timed out. Check internet or try again.'
-                );
+                // Retry once on transient network failure before giving up.
+                let adminEmail = null;
+                let lookupNetworkError = false;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    const { data: emailData, error: lookupError } = await withTimeout(
+                        supabaseClient.rpc('get_admin_email', { p_username: username }),
+                        REQUEST_TIMEOUT_MS,
+                        'Sign in timed out. Check internet or try again.'
+                    );
+                    if (lookupError) {
+                        const msg = String(lookupError.message || '').toLowerCase();
+                        const isNet = msg.includes('fetch') || msg.includes('timed out') || msg.includes('network');
+                        if (isNet && attempt === 0) {
+                            lookupNetworkError = true;
+                            await new Promise(r => setTimeout(r, 1500));
+                            continue;
+                        }
+                        // Non-network error — fail fast without recording a bad-credential attempt
+                        setStatus(loginStatus, 'Cannot reach login service right now. Please try again.', 'error');
+                        return;
+                    }
+                    lookupNetworkError = false;
+                    adminEmail = emailData;
+                    break;
+                }
 
-                if (lookupError || !adminEmail) {
+                if (lookupNetworkError) {
+                    // Both attempts failed due to network — do NOT count as bad credential
+                    setStatus(loginStatus, 'Cannot reach login service right now. Check your internet and try again.', 'error');
+                    return;
+                }
+
+                if (!adminEmail) {
+                    // Username genuinely not found — count as bad credential
                     recordFailedLoginAttempt();
                     updateRateLimitUi();
                     setStatus(loginStatus, 'Invalid username or password.', 'error');
@@ -1305,7 +1332,18 @@
                 );
 
                 if (error) {
-                    throw error;
+                    const rawMsg = String(error.message || '').toLowerCase();
+                    const isNet = rawMsg.includes('fetch') || rawMsg.includes('timed out') || rawMsg.includes('network');
+                    if (isNet) {
+                        // Network error — do NOT count as bad credential
+                        setStatus(loginStatus, 'Cannot reach login service right now. Please try again.', 'error');
+                        return;
+                    }
+                    // Wrong password — count as bad credential
+                    recordFailedLoginAttempt();
+                    updateRateLimitUi();
+                    setStatus(loginStatus, 'Invalid username or password.', 'error');
+                    return;
                 }
 
                 const userId = data.user?.id || data.session?.user?.id;
@@ -1314,7 +1352,8 @@
                     deniedState = true;
                     deniedReason = 'This account is not on the approved admin allowlist.';
                     await supabaseClient.auth.signOut();
-                    throw new Error('This account is not allowed to access admin dashboard.');
+                    showView('denied');
+                    return;
                 }
 
                 explicitLoginThisLoad = true;
@@ -1325,14 +1364,18 @@
                 showView('admin');
                 await refreshList();
             } catch (error) {
-                recordFailedLoginAttempt();
-                updateRateLimitUi();
                 console.error(error);
+                const rawMessage = String(error?.message || '').toLowerCase();
+                const isNetworkError = rawMessage.includes('fetch') || rawMessage.includes('timed out') || rawMessage.includes('network');
+                if (!isNetworkError) {
+                    // Only count genuine credential or auth errors, not network blips
+                    recordFailedLoginAttempt();
+                    updateRateLimitUi();
+                }
                 if (deniedState) {
                     showView('denied');
+                    return;
                 }
-                const rawMessage = String(error?.message || '').toLowerCase();
-                const isNetworkError = rawMessage.includes('fetch') || rawMessage.includes('timed out');
                 const friendlyMessage = isNetworkError
                     ? 'Cannot reach login service right now. Please try again.'
                     : 'Invalid username or password.';
