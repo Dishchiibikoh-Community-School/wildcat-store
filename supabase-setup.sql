@@ -54,7 +54,7 @@ as $$
     where lower(a.username) = lower(trim(p_username))
       and p_password is not null
       and length(trim(p_password)) > 0
-      and u.encrypted_password = crypt(p_password, u.encrypted_password)
+        and u.encrypted_password::text = extensions.crypt(p_password, u.encrypted_password::text)
       and u.email_confirmed_at is not null
     limit 1;
 $$;
