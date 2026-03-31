@@ -56,7 +56,7 @@ as $$
 $$;
 
 revoke all on function public.get_admin_email(text) from public;
-grant execute on function public.get_admin_email(text) to anon, authenticated;
+grant execute on function public.get_admin_email(text) to anon;
 
 create table if not exists public.items (
     id uuid primary key default gen_random_uuid(),
@@ -77,13 +77,29 @@ alter table public.items add column if not exists thumb_path text;
 
 create table if not exists public.item_audit_log (
     id bigint generated always as identity primary key,
-    action text not null check (action in ('insert', 'delete')),
+    action text not null check (action in ('insert', 'update', 'delete')),
     item_id uuid not null,
     actor_user_id uuid,
     item_name text,
     item_price numeric(10,2),
     occurred_at timestamptz not null default now()
 );
+
+do $$
+begin
+    if exists (
+        select 1
+        from pg_constraint
+        where conname = 'item_audit_log_action_check'
+          and conrelid = 'public.item_audit_log'::regclass
+    ) then
+        alter table public.item_audit_log drop constraint item_audit_log_action_check;
+    end if;
+end $$;
+
+alter table public.item_audit_log
+    add constraint item_audit_log_action_check
+    check (action in ('insert', 'update', 'delete'));
 
 create index if not exists items_price_idx on public.items (price desc);
 create index if not exists items_created_at_idx on public.items (created_at desc);
@@ -109,6 +125,10 @@ begin
         insert into public.item_audit_log (action, item_id, actor_user_id, item_name, item_price)
         values ('insert', new.id, auth.uid(), new.name, new.price);
         return new;
+    elsif tg_op = 'UPDATE' then
+        insert into public.item_audit_log (action, item_id, actor_user_id, item_name, item_price)
+        values ('update', new.id, auth.uid(), new.name, new.price);
+        return new;
     elsif tg_op = 'DELETE' then
         insert into public.item_audit_log (action, item_id, actor_user_id, item_name, item_price)
         values ('delete', old.id, auth.uid(), old.name, old.price);
@@ -121,7 +141,7 @@ $$;
 
 drop trigger if exists trg_item_audit on public.items;
 create trigger trg_item_audit
-after insert or delete on public.items
+after insert or update or delete on public.items
 for each row
 execute function public.log_item_audit();
 

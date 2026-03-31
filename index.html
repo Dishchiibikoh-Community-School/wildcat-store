@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://*.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
     <title>Wildcat School Store</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -634,6 +636,21 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function isAllowedPublicImageUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return false;
+            }
+
+            try {
+                const parsed = new URL(url, window.location.href);
+                const isSupabaseHost = parsed.hostname === new URL(SUPABASE_URL).hostname;
+                const isPublicBucketPath = parsed.pathname.includes('/storage/v1/object/public/store-images/');
+                return isSupabaseHost && isPublicBucketPath;
+            } catch (error) {
+                return false;
+            }
+        }
+
         async function fetchItems() {
             const { data, error } = await supabaseClient
                 .from('items')
@@ -688,7 +705,11 @@
                 const itemName = escapeHtml(item.name);
                 const itemCategory = escapeHtml(item.category || 'General');
                 const itemDescription = escapeHtml(item.description || '');
-                const itemImageUrl = escapeHtml(item.thumb_url || item.image_url || '');
+                const candidateImageUrl = item.thumb_url || item.image_url || '';
+                const safeImageUrl = isAllowedPublicImageUrl(candidateImageUrl)
+                    ? candidateImageUrl
+                    : 'images/wildcat-logo.png';
+                const itemImageUrl = escapeHtml(safeImageUrl);
                 const priceValue = toCurrencyDisplay(item.price);
 
                 card.innerHTML = `

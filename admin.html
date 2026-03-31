@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://*.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
     <title>Wildcat Store Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
@@ -445,6 +447,7 @@
         const SUPABASE_URL = 'https://gqmpyyozvyifdtkeccnq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXB5eW96dnlpZmR0a2VjY25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzI5MDUsImV4cCI6MjA5MDU0ODkwNX0.UYygcFzPtStTQu_MQtfIzF5vq1-S0lbB_O5WK2NEgNk';
         const IMAGE_BUCKET = 'store-images';
+        const IMAGE_FALLBACK = 'images/wildcat-logo.png';
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -573,6 +576,21 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        function isAllowedPublicImageUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return false;
+            }
+
+            try {
+                const parsed = new URL(url, window.location.href);
+                const isSupabaseHost = parsed.hostname === new URL(SUPABASE_URL).hostname;
+                const isPublicBucketPath = parsed.pathname.includes(`/storage/v1/object/public/${IMAGE_BUCKET}/`);
+                return isSupabaseHost && isPublicBucketPath;
+            } catch (error) {
+                return false;
+            }
         }
 
         function showView(view) {
@@ -925,7 +943,8 @@
             for (const item of items) {
                 const row = document.createElement('article');
                 row.className = 'item-row';
-                const displayImage = item.thumb_url || item.image_url;
+                const preferredImage = item.thumb_url || item.image_url;
+                const displayImage = isAllowedPublicImageUrl(preferredImage) ? preferredImage : IMAGE_FALLBACK;
                 row.innerHTML = `
                     <img class="thumb" src="${escapeHtml(displayImage)}" alt="${escapeHtml(item.name)}">
                     <div class="meta">
@@ -1150,10 +1169,11 @@
                 if (deniedState) {
                     showView('denied');
                 }
-                const rawMessage = String(error?.message || 'Login failed.');
-                const friendlyMessage = rawMessage.toLowerCase().includes('fetch')
-                    ? 'Cannot reach Supabase. Check internet and project URL/key.'
-                    : rawMessage;
+                const rawMessage = String(error?.message || '').toLowerCase();
+                const isNetworkError = rawMessage.includes('fetch') || rawMessage.includes('timed out');
+                const friendlyMessage = isNetworkError
+                    ? 'Cannot reach login service right now. Please try again.'
+                    : 'Invalid username or password.';
                 setStatus(loginStatus, friendlyMessage, 'error');
             }
         });
@@ -1221,12 +1241,29 @@
         });
 
         logoutBtn.addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
+            logoutBtn.disabled = true;
             deniedState = false;
             showView('login');
-            setStatus(loginStatus, 'Logged out.', null);
+            setStatus(loginStatus, 'Logging out...', null);
             loginForm.reset();
-            updateRateLimitUi();
+            itemForm.reset();
+            clearImageSelection();
+            itemsList.innerHTML = '';
+
+            try {
+                await withTimeout(
+                    supabaseClient.auth.signOut({ scope: 'local' }),
+                    REQUEST_TIMEOUT_MS,
+                    'Logout timed out.'
+                );
+                setStatus(loginStatus, 'Logged out.', 'success');
+            } catch (error) {
+                console.error(error);
+                setStatus(loginStatus, 'Logged out locally. Refresh if session appears stale.', 'success');
+            } finally {
+                logoutBtn.disabled = false;
+                updateRateLimitUi();
+            }
         });
 
         backToLoginBtn.addEventListener('click', () => {
