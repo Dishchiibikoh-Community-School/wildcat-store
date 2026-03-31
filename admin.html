@@ -582,6 +582,7 @@
         let deniedState = false;
         let deniedReason = 'Your account is signed out for safety. Please sign in with the approved admin account.';
         let explicitLoginThisLoad = false;
+        let loginAttemptInProgress = false;
 
         function markFreshLoginRequired() {
             try {
@@ -1279,6 +1280,8 @@
                 return;
             }
 
+            loginAttemptInProgress = true;
+
             try {
                 // Look up the auth email for this username from the database.
                 // No email is ever stored in frontend source.
@@ -1346,17 +1349,21 @@
                     return;
                 }
 
+                // Set this immediately after successful auth so auth-change listeners
+                // do not force a local logout during the same login attempt.
+                explicitLoginThisLoad = true;
+
                 const userId = data.user?.id || data.session?.user?.id;
                 const adminAllowed = await isCurrentUserAdmin(userId);
                 if (!adminAllowed) {
                     deniedState = true;
                     deniedReason = 'This account is not on the approved admin allowlist.';
+                    explicitLoginThisLoad = false;
                     await supabaseClient.auth.signOut();
                     showView('denied');
                     return;
                 }
 
-                explicitLoginThisLoad = true;
                 clearRateState();
                 clearFreshLoginRequired();
                 updateRateLimitUi();
@@ -1365,6 +1372,7 @@
                 await refreshList();
             } catch (error) {
                 console.error(error);
+                explicitLoginThisLoad = false;
                 const rawMessage = String(error?.message || '').toLowerCase();
                 const isNetworkError = rawMessage.includes('fetch') || rawMessage.includes('timed out') || rawMessage.includes('network');
                 if (!isNetworkError) {
@@ -1380,6 +1388,8 @@
                     ? 'Cannot reach login service right now. Please try again.'
                     : 'Invalid username or password.';
                 setStatus(loginStatus, friendlyMessage, 'error');
+            } finally {
+                loginAttemptInProgress = false;
             }
         });
 
@@ -1502,6 +1512,9 @@
             }
 
             supabaseClient.auth.onAuthStateChange(async () => {
+                if (loginAttemptInProgress) {
+                    return;
+                }
                 try {
                     await updateUiForSession();
                 } catch (error) {
