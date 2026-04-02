@@ -300,35 +300,27 @@
         /* --- STORE SECTION --- */
         .store-section {
             display: none;
-            padding: 2rem 5%;
+            padding: 0.5rem 0 3rem;
             min-height: 80vh;
         }
 
         .store-header {
             text-align: center;
-            margin-bottom: 4rem;
-            padding-top: 2rem;
-        }
-        
-        .store-header h2 {
-            font-size: 2.5rem;
-            color: var(--text-main);
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 2rem 5% 0;
         }
 
-        .store-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
+        .store-header h2 {
+            font-size: 2rem;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
         }
 
         .store-status {
             max-width: 700px;
             margin: 0 auto;
             text-align: center;
-            padding: 1.5rem;
+            padding: 1.5rem 5%;
             border-radius: 12px;
             background: #ffffff;
             border: 1px solid rgba(0,0,0,0.06);
@@ -336,16 +328,86 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* --- CATEGORY ROWS --- */
+        .store-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-section {
+            padding: 1.5rem 0 0.5rem;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            padding: 0 5%;
+            margin-bottom: 0.9rem;
+        }
+
+        .category-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        .category-count {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Horizontal scroll on mobile */
+        .category-row {
+            display: flex;
+            gap: 0.85rem;
+            overflow-x: auto;
+            padding: 0.2rem 5% 1rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .category-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Desktop: wrap into grid */
+        @media (min-width: 700px) {
+            .category-row {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                overflow-x: visible;
+                padding-bottom: 0.5rem;
+            }
+        }
+
         /* --- ITEM CARDS --- */
         .item-card {
+            flex: 0 0 155px;
+            scroll-snap-align: start;
             background: var(--bg-card);
-            border-radius: var(--radius);
+            border-radius: 14px;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.04);
-            box-shadow: var(--shadow-sm);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            cursor: pointer;
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(12px);
+            transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.25s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        @media (min-width: 700px) {
+            .item-card {
+                flex: unset;
+            }
         }
 
         .item-card.visible {
@@ -354,97 +416,288 @@
         }
 
         .item-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 30px rgba(65, 105, 225, 0.18);
+            transform: translateY(-5px);
+        }
+
+        .item-card:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .item-card.out-of-stock {
+            opacity: 0.5;
+        }
+
+        .item-card.out-of-stock .card-image-wrapper img {
+            filter: grayscale(80%);
         }
 
         .card-image-wrapper {
             width: 100%;
-            height: 340px;
-            background-color: #f8f8f8;
+            height: 155px;
+            background-color: #f4f4f6;
             overflow: hidden;
             position: relative;
+        }
+
+        @media (min-width: 700px) {
+            .card-image-wrapper {
+                height: 240px;
+            }
         }
 
         .card-image-wrapper img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.6s ease;
+            transition: transform 0.5s ease;
         }
 
-        .item-card:hover img {
-            transform: scale(1.08);
+        .item-card:hover .card-image-wrapper img {
+            transform: scale(1.07);
+        }
+
+        .badge-stock {
+            position: absolute;
+            top: 7px;
+            left: 7px;
+            background: rgba(0,0,0,0.72);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 5px;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .card-content {
-            padding: 1.5rem;
-        }
-
-        .card-category {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--primary);
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            padding: 0.6rem 0.7rem 0.75rem;
         }
 
         .card-title {
-            font-size: 1.15rem;
+            font-size: 0.85rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
             color: var(--text-main);
+            margin-bottom: 0.35rem;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .card-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-            min-height: 2.7em; /* Keeps cards aligned */
+        @media (min-width: 700px) {
+            .card-title {
+                font-size: 0.98rem;
+                white-space: normal;
+            }
         }
 
         .card-footer {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid #f0f0f0;
+            justify-content: space-between;
         }
 
         .price-tag {
             font-weight: 800;
             color: var(--primary);
-            font-size: 1.25rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
-        .wb-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            text-transform: uppercase;
+        .wb-coin {
+            font-size: 0.65rem;
+            font-weight: 800;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 4px;
+            padding: 1px 5px;
+            letter-spacing: 0.03em;
         }
 
-        /* Out of Stock Styling */
-        .item-card.out-of-stock {
-            opacity: 0.7;
-            pointer-events: none;
+        /* --- PRODUCT MODAL (bottom sheet) --- */
+        .product-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            align-items: flex-end;
+            justify-content: center;
         }
-        .item-card.out-of-stock img {
-            filter: grayscale(100%);
+
+        @media (min-width: 600px) {
+            .product-modal {
+                align-items: center;
+            }
         }
-        .badge-stock {
+
+        .product-modal.active {
+            display: flex;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.58);
+            backdrop-filter: blur(4px);
+            animation: backdropIn 0.28s ease;
+        }
+
+        @keyframes backdropIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-sheet {
+            position: relative;
+            background: #fff;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px 24px 0 0;
+            overflow: hidden;
+            max-height: 93vh;
+            overflow-y: auto;
+            animation: sheetUp 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+            z-index: 1;
+        }
+
+        @media (min-width: 600px) {
+            .modal-sheet {
+                border-radius: 24px;
+                max-height: 88vh;
+                margin: 1rem;
+            }
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(55px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-drag-bar {
+            width: 40px;
+            height: 4px;
+            background: rgba(0,0,0,0.12);
+            border-radius: 2px;
+            margin: 10px auto 0;
+        }
+
+        @media (min-width: 600px) {
+            .modal-drag-bar { display: none; }
+        }
+
+        .modal-close {
             position: absolute;
             top: 12px;
             right: 12px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 6px 10px;
-            border-radius: 6px;
+            z-index: 10;
+            background: rgba(0,0,0,0.48);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover { background: rgba(0,0,0,0.72); }
+
+        .modal-img {
+            width: 100%;
+            height: 290px;
+            object-fit: cover;
+            display: block;
+            background: #f4f4f6;
+        }
+
+        @media (min-width: 600px) {
+            .modal-img { height: 340px; }
+        }
+
+        .modal-body {
+            padding: 1.1rem 1.4rem 2rem;
+        }
+
+        .modal-category-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--primary);
+            background: rgba(65,105,225,0.1);
+            border-radius: 5px;
+            padding: 3px 8px;
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-price-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-price {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .modal-wb-badge {
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 800;
+            padding: 5px 11px;
+            border-radius: 7px;
+            letter-spacing: 0.05em;
+        }
+
+        .modal-desc {
+            font-size: 0.93rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin-bottom: 1.1rem;
+        }
+
+        .modal-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 5px 13px;
+            border-radius: 999px;
+        }
+
+        .modal-status-badge.in-stock { background: #dcfce7; color: #166534; }
+        .modal-status-badge.out-stock { background: #fee2e2; color: #991b1b; }
+
+        .modal-redeem-note {
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
         /* --- FOOTER --- */
@@ -455,7 +708,7 @@
             background: #fff;
             margin-top: 4rem;
         }
-        
+
         footer h3 {
             color: var(--primary);
             margin-bottom: 0.5rem;
@@ -571,10 +824,30 @@
     <div id="store-page" class="store-section">
         <div class="store-header">
             <h2>Current Collection</h2>
-            <p style="color: var(--text-muted);">Redeem items in person on Fridays during lunch.</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Tap any item to see details &nbsp;·&nbsp; Redeem in person on Fridays</p>
         </div>
-        <div class="store-grid" id="grid-container">
+        <div class="store-grid" id="grid-container"></div>
+    </div>
+
+    <!-- PRODUCT DETAIL MODAL -->
+    <div id="productModal" class="product-modal" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-sheet">
+            <div class="modal-drag-bar"></div>
+            <button class="modal-close" id="modalCloseBtn" aria-label="Close">&#x2715;</button>
+            <img class="modal-img" id="modalImg" src="" alt="">
+            <div class="modal-body">
+                <div class="modal-category-badge" id="modalCategory"></div>
+                <h2 class="modal-name" id="modalName"></h2>
+                <div class="modal-price-row">
+                    <span class="modal-price" id="modalPrice"></span>
+                    <span class="modal-wb-badge">WILDCAT BUCKS</span>
+                </div>
+                <p class="modal-desc" id="modalDesc"></p>
+                <span class="modal-status-badge" id="modalStock"></span>
+                <p class="modal-redeem-note">&#128197; Redeem in person every Friday during lunch.</p>
             </div>
+        </div>
     </div>
 
     <footer>
@@ -692,43 +965,99 @@
                 return;
             }
 
-            items.forEach((item, index) => {
-                const card = document.createElement('article');
-                card.className = 'item-card';
-                if(!item.in_stock) card.classList.add('out-of-stock');
-                
-                // Staggered Animation Delay
-                setTimeout(() => {
-                    card.classList.add('visible');
-                }, index * 50);
-
-                const itemName = escapeHtml(item.name);
-                const itemCategory = escapeHtml(item.category || 'General');
-                const itemDescription = escapeHtml(item.description || '');
-                const candidateImageUrl = item.thumb_url || item.image_url || '';
-                const safeImageUrl = isAllowedPublicImageUrl(candidateImageUrl)
-                    ? candidateImageUrl
-                    : 'images/wildcat-logo.png';
-                const itemImageUrl = escapeHtml(safeImageUrl);
-                const priceValue = toCurrencyDisplay(item.price);
-
-                card.innerHTML = `
-                    <div class="card-image-wrapper">
-                        <img src="${itemImageUrl}" alt="${itemName}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer">
-                        ${!item.in_stock ? '<span class="badge-stock">OUT OF STOCK</span>' : ''}
-                    </div>
-                    <div class="card-content">
-                        <div class="card-category">${itemCategory}</div>
-                        <h3 class="card-title">${itemName}</h3>
-                        <p class="card-desc">${itemDescription}</p>
-                        <div class="card-footer">
-                            <span class="price-tag">${priceValue} <span class="wb-label">WB</span></span>
-                            <span class="wb-label">${item.in_stock ? 'In Person Only' : 'Unavailable'}</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
+            // Group items by category
+            const categoryMap = new Map();
+            items.forEach(item => {
+                const cat = item.category || 'General';
+                if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+                categoryMap.get(cat).push(item);
             });
+
+            let globalIndex = 0;
+            categoryMap.forEach((catItems, categoryName) => {
+                const section = document.createElement('div');
+                section.className = 'category-section';
+
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.innerHTML = `
+                    <span class="category-title">${escapeHtml(categoryName)}</span>
+                    <span class="category-count">${catItems.length} item${catItems.length !== 1 ? 's' : ''}</span>
+                `;
+                section.appendChild(header);
+
+                const row = document.createElement('div');
+                row.className = 'category-row';
+
+                catItems.forEach(item => {
+                    const card = document.createElement('article');
+                    card.className = 'item-card';
+                    if (!item.in_stock) card.classList.add('out-of-stock');
+
+                    const delay = globalIndex * 50;
+                    globalIndex++;
+                    setTimeout(() => card.classList.add('visible'), delay);
+
+                    const itemName = escapeHtml(item.name);
+                    const candidateImageUrl = item.thumb_url || item.image_url || '';
+                    const safeImageUrl = isAllowedPublicImageUrl(candidateImageUrl)
+                        ? candidateImageUrl
+                        : 'images/wildcat-logo.png';
+                    const itemImageUrl = escapeHtml(safeImageUrl);
+                    const priceValue = toCurrencyDisplay(item.price);
+
+                    card.innerHTML = `
+                        <div class="card-image-wrapper">
+                            <img src="${itemImageUrl}" alt="${itemName}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer">
+                            ${!item.in_stock ? '<span class="badge-stock">Sold Out</span>' : ''}
+                        </div>
+                        <div class="card-content">
+                            <h3 class="card-title">${itemName}</h3>
+                            <div class="card-footer">
+                                <span class="price-tag">${priceValue} <span class="wb-coin">WB</span></span>
+                            </div>
+                        </div>
+                    `;
+
+                    card.addEventListener('click', () => openProductModal(item));
+                    row.appendChild(card);
+                });
+
+                section.appendChild(row);
+                container.appendChild(section);
+            });
+        }
+
+        // --- PRODUCT MODAL ---
+        function openProductModal(item) {
+            const modal = document.getElementById('productModal');
+            const candidateUrl = item.image_url || '';
+            const safeUrl = isAllowedPublicImageUrl(candidateUrl) ? candidateUrl : 'images/wildcat-logo.png';
+
+            document.getElementById('modalImg').src = safeUrl;
+            document.getElementById('modalImg').alt = item.name || '';
+            document.getElementById('modalCategory').textContent = item.category || 'General';
+            document.getElementById('modalName').textContent = item.name || '';
+            document.getElementById('modalPrice').textContent = toCurrencyDisplay(item.price);
+            document.getElementById('modalDesc').textContent = item.description || '';
+
+            const stockEl = document.getElementById('modalStock');
+            if (item.in_stock) {
+                stockEl.textContent = '✓ In Stock';
+                stockEl.className = 'modal-status-badge in-stock';
+            } else {
+                stockEl.textContent = '✕ Out of Stock';
+                stockEl.className = 'modal-status-badge out-stock';
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProductModal() {
+            const modal = document.getElementById('productModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
         // --- HABITS MODAL FUNCTIONS ---
@@ -744,23 +1073,27 @@
             document.body.style.overflow = 'auto';
         }
 
-        // Close modal when clicking outside the content
+        // Close habits modal when clicking outside the content
         document.addEventListener('click', (e) => {
-            const modal = document.getElementById('habitsModal');
-            if (e.target === modal) {
-                closeHabitsModal();
-            }
+            const habitsModal = document.getElementById('habitsModal');
+            if (e.target === habitsModal) closeHabitsModal();
+
+            const productModal = document.getElementById('productModal');
+            if (e.target === document.getElementById('modalBackdrop')) closeProductModal();
         });
 
-        // Close modal on Escape key
+        // Close modals on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeHabitsModal();
+                closeProductModal();
             }
         });
 
         // --- ENTRANCE ANIMATIONS ---
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('modalCloseBtn').addEventListener('click', closeProductModal);
+
             const heroElements = document.querySelectorAll('.hero h1, .hero p, .btn-primary, .feature-card');
             
             const observer = new IntersectionObserver((entries) => {
