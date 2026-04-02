@@ -355,6 +355,41 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .row-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            align-items: stretch;
+        }
+
+        .edit-meta {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .edit-meta input,
+        .edit-meta textarea {
+            width: 100%;
+            border: 1px solid rgba(65, 105, 225, 0.35);
+            border-radius: 8px;
+            padding: 0.45rem 0.6rem;
+            font: inherit;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        .edit-meta textarea {
+            resize: vertical;
+            min-height: 56px;
+        }
+
+        .edit-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 0.1rem;
+        }
     </style>
 </head>
 <body>
@@ -586,6 +621,7 @@
         let itemsRealtimeChannel = null;
         let realtimeRefreshTimer = null;
         let listBootstrapTimer = null;
+        const itemDataMap = new Map();
 
         function teardownItemsRealtime() {
             if (realtimeRefreshTimer) {
@@ -1220,20 +1256,25 @@
                 return;
             }
 
+            itemDataMap.clear();
             for (const item of items) {
+                itemDataMap.set(item.id, item);
                 const row = document.createElement('article');
                 row.className = 'item-row';
                 const preferredImage = item.thumb_url || item.image_url;
                 const displayImage = isAllowedPublicImageUrl(preferredImage) ? preferredImage : IMAGE_FALLBACK;
                 row.innerHTML = `
                     <img class="thumb" src="${escapeHtml(displayImage)}" alt="${escapeHtml(item.name)}">
-                    <div class="meta">
+                    <div class="meta" id="meta-${item.id}">
                         <h3>${escapeHtml(item.name)}</h3>
                         <p>${escapeHtml(item.category || 'General')} | ${item.in_stock ? 'In stock' : 'Out of stock'}</p>
                         <p>${escapeHtml(item.description || '')}</p>
                         <div class="price">${formatPrice(item.price)} WB</div>
                     </div>
-                    <button class="btn btn-danger" type="button" data-id="${item.id}" data-path="${escapeHtml(item.image_path)}" data-thumb-path="${escapeHtml(item.thumb_path || '')}">Delete</button>
+                    <div class="row-actions" id="actions-${item.id}">
+                        <button class="btn btn-primary" type="button" data-edit-id="${item.id}">Edit</button>
+                        <button class="btn btn-danger" type="button" data-id="${item.id}" data-path="${escapeHtml(item.image_path)}" data-thumb-path="${escapeHtml(item.thumb_path || '')}">Delete</button>
+                    </div>
                 `;
                 itemsList.appendChild(row);
             }
@@ -1289,6 +1330,100 @@
                         button.disabled = false;
                     }
                 });
+            });
+
+            const editButtons = itemsList.querySelectorAll('button[data-edit-id]');
+            editButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const itemId = button.getAttribute('data-edit-id');
+                    const item = itemDataMap.get(itemId);
+                    if (!item) {
+                        return;
+                    }
+                    openEditRow(itemId, item);
+                });
+            });
+        }
+
+        function openEditRow(itemId, item) {
+            const metaDiv = document.getElementById(`meta-${itemId}`);
+            const actionsDiv = document.getElementById(`actions-${itemId}`);
+            if (!metaDiv || !actionsDiv) {
+                return;
+            }
+
+            metaDiv.innerHTML = `
+                <div class="edit-meta">
+                    <div>
+                        <div class="edit-label">Name</div>
+                        <input class="edit-name" type="text" maxlength="120" value="${escapeHtml(item.name)}" required>
+                    </div>
+                    <div>
+                        <div class="edit-label">Price (WB)</div>
+                        <input class="edit-price" type="number" min="0" step="0.01" value="${item.price}" required>
+                    </div>
+                    <div>
+                        <div class="edit-label">Description</div>
+                        <textarea class="edit-desc" maxlength="260">${escapeHtml(item.description || '')}</textarea>
+                    </div>
+                </div>
+                <p class="status" id="edit-status-${itemId}"></p>
+            `;
+
+            actionsDiv.innerHTML = `
+                <button class="btn btn-primary" type="button" id="save-btn-${itemId}">Save</button>
+                <button class="btn btn-ghost" type="button" id="cancel-btn-${itemId}">Cancel</button>
+            `;
+
+            document.getElementById(`save-btn-${itemId}`).addEventListener('click', async () => {
+                const nameInput = metaDiv.querySelector('.edit-name');
+                const priceInput = metaDiv.querySelector('.edit-price');
+                const descInput = metaDiv.querySelector('.edit-desc');
+                const statusEl = document.getElementById(`edit-status-${itemId}`);
+                const saveBtn = document.getElementById(`save-btn-${itemId}`);
+
+                const name = nameInput.value.trim();
+                const price = Number(priceInput.value);
+                const description = descInput.value.trim();
+
+                if (!name) {
+                    statusEl.textContent = 'Name is required.';
+                    statusEl.className = 'status error';
+                    return;
+                }
+
+                if (!Number.isFinite(price) || price < 0) {
+                    statusEl.textContent = 'Enter a valid price.';
+                    statusEl.className = 'status error';
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                statusEl.textContent = 'Saving...';
+                statusEl.className = 'status';
+
+                try {
+                    const { error: updateError } = await supabaseClient
+                        .from('items')
+                        .update({ name, price, description })
+                        .eq('id', itemId);
+
+                    if (updateError) {
+                        throw updateError;
+                    }
+
+                    setStatus(listStatus, 'Item updated.', 'success');
+                    await refreshList();
+                } catch (error) {
+                    console.error(error);
+                    statusEl.textContent = error.message || 'Save failed.';
+                    statusEl.className = 'status error';
+                    saveBtn.disabled = false;
+                }
+            });
+
+            document.getElementById(`cancel-btn-${itemId}`).addEventListener('click', async () => {
+                await refreshList();
             });
         }
 
