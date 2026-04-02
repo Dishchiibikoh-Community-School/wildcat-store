@@ -1363,6 +1363,10 @@
                         <input class="edit-price" type="number" min="0" step="0.01" value="${item.price}" required>
                     </div>
                     <div>
+                        <div class="edit-label">Category</div>
+                        <input class="edit-category" type="text" maxlength="80" value="${escapeHtml(item.category || 'General')}">
+                    </div>
+                    <div>
                         <div class="edit-label">Description</div>
                         <textarea class="edit-desc" maxlength="260">${escapeHtml(item.description || '')}</textarea>
                     </div>
@@ -1378,12 +1382,14 @@
             document.getElementById(`save-btn-${itemId}`).addEventListener('click', async () => {
                 const nameInput = metaDiv.querySelector('.edit-name');
                 const priceInput = metaDiv.querySelector('.edit-price');
+                const categoryInput = metaDiv.querySelector('.edit-category');
                 const descInput = metaDiv.querySelector('.edit-desc');
                 const statusEl = document.getElementById(`edit-status-${itemId}`);
                 const saveBtn = document.getElementById(`save-btn-${itemId}`);
 
                 const name = nameInput.value.trim();
                 const price = Number(priceInput.value);
+                const category = String(categoryInput.value || 'General').trim() || 'General';
                 const description = descInput.value.trim();
 
                 if (!name) {
@@ -1405,7 +1411,7 @@
                 try {
                     const { error: updateError } = await supabaseClient
                         .from('items')
-                        .update({ name, price, description })
+                        .update({ name, price, category, description })
                         .eq('id', itemId);
 
                     if (updateError) {
