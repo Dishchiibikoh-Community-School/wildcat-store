@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($py = Get-Content .graphify_python; & $py -c \"import json; from graphify.detect import detect; from pathlib import Path; result = detect\\(Path\\('.'\\)\\); print\\(json.dumps\\(result\\)\\)\" | Out-File -FilePath .graphify_detect.json -Encoding utf8)",
+      "Read(//c/Users/Cerus/OneDrive/Documents/Obsidian Vault/projects/**)",
+      "PowerShell($py = \"C:\\\\Users\\\\Cerus\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\"; & $py -m graphify claude install 2>&1)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Cerus\\OneDrive\\Documents\\Obsidian Vault\\graphify",
+      "C:\\Users\\Cerus\\OneDrive\\Documents\\Obsidian Vault\\projects"
+    ]
+  }
+}
